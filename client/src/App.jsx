@@ -12,7 +12,7 @@ import ApplyAlumni from './components/ApplyAlumni';
 import NoDuesStatus from './components/NoDuesStatus';
 import Register from './components/Register';
 import Navbar from './components/Navbar';
-
+import Footer from './components/Footer';
 // API base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -133,6 +133,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
+        {isAuthenticated && <Footer />}
       </div>
     </Router>
   );
