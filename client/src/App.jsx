@@ -14,7 +14,7 @@ import Register from './components/Register';
 import Navbar from './components/Navbar';
 
 // API base URL
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://collegespher.onrender.com/api';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
