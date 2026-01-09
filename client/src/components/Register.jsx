@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { UserPlusIcon } from '@heroicons/react/24/outline';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
 
 export default function Register({ onLogin }) {
   const [formData, setFormData] = useState({
