@@ -2,6 +2,8 @@ import { Fragment } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, AcademicCapIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaFacebook, FaTwitter, FaYoutube, FaLinkedin, FaInstagram } from 'react-icons/fa';
+import { HiPhone, HiMail } from 'react-icons/hi';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -31,18 +33,57 @@ export default function Navbar({ user, onLogout }) {
   };
 
   return (
+    <>
+    {/* Top Bar */}
+    <div className="bg-[#002147] text-white py-2 text-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center">
+        <div className="flex items-center space-x-4 mb-2 md:mb-0">
+          <span className="font-bold">Follow Us</span>
+          <div className="flex space-x-3">
+             <a href="#" className="w-6 h-6 rounded-full bg-white text-[#002147] flex items-center justify-center hover:bg-gray-200 transition-colors"><FaFacebook size={12} /></a>
+             <a href="#" className="w-6 h-6 rounded-full bg-white text-[#002147] flex items-center justify-center hover:bg-gray-200 transition-colors"><FaInstagram size={12} /></a>
+             <a href="#" className="w-6 h-6 rounded-full bg-white text-[#002147] flex items-center justify-center hover:bg-gray-200 transition-colors"><FaYoutube size={12} /></a>
+             <a href="#" className="w-6 h-6 rounded-full bg-white text-[#002147] flex items-center justify-center hover:bg-gray-200 transition-colors"><FaLinkedin size={12} /></a>
+             <a href="#" className="w-6 h-6 rounded-full bg-white text-[#002147] flex items-center justify-center hover:bg-gray-200 transition-colors font-bold text-xs">X</a>
+          </div>
+        </div>
+        <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-6">
+          <div className="flex items-center space-x-4">
+            <a href="mailto:nmiettalegaon@gmail.com" className="flex items-center hover:text-blue-300">
+               <HiMail className="mr-1" /> nmiettalegaon@gmail.com
+            </a>
+            <a href="tel:+917423080910" className="flex items-center hover:text-blue-300">
+               <HiPhone className="mr-1" /> +91 74230 80910
+            </a>
+          </div>
+          <a href="#" className="bg-blue-600 px-4 py-1 rounded hover:bg-blue-700 transition-colors text-xs font-semibold uppercase tracking-wider">
+            Campus Tour
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {/* Banner Image */}
+    <div className="w-full">
+        <img 
+            src="https://res.cloudinary.com/dgxzpenl5/image/upload/v1767965951/PhotoshopExtension_Image_fjzfdh.png" 
+            alt="College Banner" 
+            className="w-full h-auto object-cover"
+        />
+    </div>
+
     <Disclosure as="nav" className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 shadow-lg sticky top-0 z-50">
       {({ open }) => (
         <>
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 justify-between items-center">
               <div className="flex items-center">
-                <Link to="/" className="flex flex-shrink-0 items-center space-x-2 group">
+                {/* <Link to="/" className="flex flex-shrink-0 items-center space-x-2 group">
                   <div className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
                     <AcademicCapIcon className="h-8 w-8 text-white" />
                   </div>
                   <span className="text-xl font-bold text-white tracking-wide">CampuSphere</span>
-                </Link>
+                </Link> */}
                 <div className="hidden sm:ml-8 sm:flex sm:space-x-4">
                   {navigation.map((item) => (
                     <Link
@@ -177,5 +218,6 @@ export default function Navbar({ user, onLogout }) {
         </>
       )}
     </Disclosure>
+    </>
   );
 }
