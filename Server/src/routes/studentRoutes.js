@@ -6,7 +6,8 @@ const {
   applyLeavingCertificate,
   getMyApplications,
   registerAlumni,
-  getAlumniApplications
+  getAlumniApplications,
+  downloadCertificate
 } = require('../controllers/studentController');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 // Leaving Certificate Routes
 router.post('/apply', auth, role('student'), applyLeavingCertificate);
 router.get('/applications', auth, role('student'), getMyApplications);
+router.get('/application/:id/download', auth, role('student'), downloadCertificate);
 
 // Alumni Routes
 router.post('/alumni/apply', auth, role('student'), registerAlumni);

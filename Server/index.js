@@ -8,6 +8,8 @@ const authRoutes = require('./src/routes/authRoutes');
 const studentRoutes = require('./src/routes/studentRoutes');
 const departmentRoutes = require('./src/routes/departmentRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const hodRoutes = require('./src/routes/hodRoutes');
+const principalRoutes = require('./src/routes/principalRoutes');
 
 const app = express();
 
@@ -22,6 +24,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/department', departmentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/hod', hodRoutes);
+app.use('/api/principal', principalRoutes);
 
 // Root
 app.get('/', (req, res) => {

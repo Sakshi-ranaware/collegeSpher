@@ -44,6 +44,12 @@ export default function Register({ onLogin }) {
       // Redirect based on role
       if (user.role === 'student') {
         navigate('/dashboard');
+      } else if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.role === 'hod') {
+        navigate('/hod');
+      } else if (user.role === 'principal') {
+        navigate('/principal');
       } else {
         navigate('/department');
       }
@@ -130,6 +136,9 @@ export default function Register({ onLogin }) {
               >
                 <option value="student">Student</option>
                 <option value="department">Department Head</option>
+                <option value="hod">HOD</option>
+                <option value="principal">Principal</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 

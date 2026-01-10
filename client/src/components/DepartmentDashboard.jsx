@@ -10,7 +10,7 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export default function DepartmentDashboard() {
+export default function DepartmentDashboard({ user }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,18 +34,20 @@ export default function DepartmentDashboard() {
     fetchApplications();
   }, []);
 
-  const handleStatusUpdate = async (id, status) => {
+  const handleUpdate = async (id, dueAmount, remark, authorityName, signature) => {
     try {
       const token = localStorage.getItem('token');
       await axios.put(
         `${API_BASE_URL}/department/applications/${id}`,
-        { status },
+        { dueAmount, remark, authorityName, signature },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Update the local state to reflect the change
-      setApplications(applications.map(app => 
-        app._id === id ? { ...app, status } : app
-      ));
+      // Refresh list to show saved data
+      const response = await axios.get(`${API_BASE_URL}/department/applications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setApplications(response.data);
+      alert('Updated successfully');
     } catch (err) {
       console.error('Error updating application status:', err);
       setError('Failed to update application status');
@@ -112,44 +114,65 @@ export default function DepartmentDashboard() {
                       Applied on: {new Date(application.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex space-x-2">
-                    {application.status === 'pending' && (
-                      <>
-                        <button
-                          onClick={() => handleStatusUpdate(application._id, 'approved')}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                        >
-                          <CheckCircleIcon className="h-4 w-4 mr-1" />
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleStatusUpdate(application._id, 'rejected')}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          <XCircleIcon className="h-4 w-4 mr-1" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        application.status === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : application.status === 'rejected'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {application.status === 'approved' ? (
-                        <CheckCircleIcon className="h-3 w-3 mr-1" />
-                      ) : application.status === 'rejected' ? (
-                        <XCircleIcon className="h-3 w-3 mr-1" />
-                      ) : (
-                        <ClockIcon className="h-3 w-3 mr-1" />
-                      )}
-                      {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                    </span>
-                  </div>
+                      {/* Editable Row for Department */}
+                      <div className="mt-4 border-t pt-4">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Update Department Dues Status</h4>
+                        <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-medium text-gray-700">Due Amount</label>
+                            <input
+                              type="number"
+                              defaultValue={application.noDuesStatuses.find(d => d.department === user.department)?.dueAmount || 0}
+                              onChange={(e) => {
+                                application.tempAmount = e.target.value;
+                              }}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            />
+                          </div>
+                          <div className="sm:col-span-4">
+                            <label className="block text-xs font-medium text-gray-700">Remark</label>
+                            <input
+                              type="text"
+                              defaultValue={application.noDuesStatuses.find(d => d.department === user.department)?.remark || ''}
+                              onChange={(e) => {
+                                application.tempRemark = e.target.value;
+                              }}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            />
+                          </div>
+                           <div className="sm:col-span-3">
+                            <label className="block text-xs font-medium text-gray-700">Authority Name</label>
+                            <input
+                              type="text"
+                              defaultValue={application.noDuesStatuses.find(d => d.department === user.department)?.authorityName || ''}
+                              onChange={(e) => {
+                                application.tempAuth = e.target.value;
+                              }}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            />
+                          </div>
+                           <div className="sm:col-span-3">
+                            <label className="block text-xs font-medium text-gray-700">Signature (Type Name)</label>
+                            <input
+                              type="text"
+                              defaultValue={application.noDuesStatuses.find(d => d.department === user.department)?.signature || ''}
+                              onChange={(e) => {
+                                application.tempSign = e.target.value;
+                              }}
+                              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={() => handleUpdate(application._id, application.tempAmount, application.tempRemark, application.tempAuth, application.tempSign)}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            Save Details
+                          </button>
+                        </div>
+                      </div>
+                   
                 </div>
               </li>
             ))}

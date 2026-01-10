@@ -107,30 +107,41 @@ export default function NoDuesStatus() {
           <div className="flow-root">
             <ul className="-my-5 divide-y divide-gray-200">
               {application.noDuesStatuses.map((item, index) => {
-                const style = statusStyles[item.status] || statusStyles.pending;
-                const Icon = style.icon;
+                let iconColor = 'text-yellow-500';
+                let bgColor = 'bg-yellow-50';
+                let Icon = ClockIcon;
+                let statusText = 'Pending';
+                
+                if (item.status === 'cleared') {
+                    iconColor = 'text-green-600';
+                    bgColor = 'bg-green-100';
+                    Icon = CheckCircleIcon;
+                    statusText = 'Cleared';
+                } else if (item.status === 'dues_pending') {
+                    iconColor = 'text-red-600';
+                    bgColor = 'bg-red-100';
+                    Icon = ExclamationCircleIcon;
+                    statusText = 'Dues Pending';
+                }
+
                 return (
                   <li key={index} className="py-5">
                     <div className="flex items-center space-x-4">
                       <div className="flex-shrink-0">
-                        <span className={`inline-flex items-center justify-center h-10 w-10 rounded-full ${style.bg}`}>
-                          <Icon className={`h-6 w-6 ${style.color}`} aria-hidden="true" />
+                        <span className={`inline-flex items-center justify-center h-10 w-10 rounded-full ${bgColor}`}>
+                            <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden="true" />
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
                          <p className="text-sm font-medium text-gray-900 truncate">
                            {item.department} Department
                          </p>
-                         {item.remark && (
-                           <p className="text-sm text-gray-500 truncate">
-                             Remark: {item.remark}
-                           </p>
-                         )}
-                      </div>
-                      <div>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${style.bg} ${style.color}`}>
-                          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                        </span>
+                         <div className="text-sm text-gray-500">
+                           <p>Status: <span className={`font-medium ${iconColor}`}>{statusText}</span></p>
+                           {item.dueAmount > 0 && <p className="text-red-600 font-medium">Due Amount: ₹{item.dueAmount}</p>}
+                           {item.remark && <p>Remark: {item.remark}</p>}
+                           {item.authorityName && <p>Authority: {item.authorityName}</p>}
+                         </div>
                       </div>
                     </div>
                   </li>

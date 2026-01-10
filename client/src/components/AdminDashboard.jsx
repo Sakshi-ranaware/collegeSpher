@@ -4,6 +4,7 @@ import {
   CheckCircleIcon, XCircleIcon, ClockIcon, 
   UserGroupIcon, DocumentTextIcon, ArrowPathIcon 
 } from '@heroicons/react/24/outline';
+import NoDuesForm from './NoDuesForm';
 
 const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
 
@@ -11,6 +12,7 @@ export default function AdminDashboard({ user }) {
   const [activeTab, setActiveTab] = useState('lc'); // 'lc' or 'alumni'
   const [lcApplications, setLcApplications] = useState([]);
   const [alumniApplications, setAlumniApplications] = useState([]);
+  const [editingNoDuesId, setEditingNoDuesId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -102,22 +104,30 @@ export default function AdminDashboard({ user }) {
                       <p className="font-medium text-blue-600">Student: {app.student?.name}</p>
                       <p className="text-sm text-gray-500">PRN: {app.prn} | Status: {app.status}</p>
                     </div>
-                    <div>
-                      {app.status === 'pending' && (
+
+                      <div className="flex space-x-2">
                         <button
-                          onClick={() => handleLcApprove(app._id)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                           onClick={() => setEditingNoDuesId(app._id)}
+                           className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         >
-                          Generate Cert
+                          No Dues Form
                         </button>
-                      )}
-                      {app.status === 'approved' && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Approved
-                        </span>
-                      )}
+                        {app.status === 'pending' && (
+                          <button
+                            onClick={() => handleLcApprove(app._id)}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                          >
+                            Generate Cert
+                          </button>
+                        )}
+                        {app.status === 'approved' && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Approved
+                          </span>
+                        )}
+
+                      </div>
                     </div>
-                  </div>
                 </li>
               ))}
               {lcApplications.length === 0 && <p className="p-4 text-gray-500 text-center">No applications found.</p>}
@@ -165,6 +175,16 @@ export default function AdminDashboard({ user }) {
           </div>
         )}
       </div>
+
+      {editingNoDuesId && (
+        <NoDuesForm 
+          applicationId={editingNoDuesId} 
+          onClose={() => {
+            setEditingNoDuesId(null);
+            fetchData(); // Refresh data to see any status updates if we ever show summary on card
+          }} 
+        />
+      )}
     </div>
   );
 }

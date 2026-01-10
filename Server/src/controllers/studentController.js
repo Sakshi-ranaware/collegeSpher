@@ -41,6 +41,35 @@ exports.getMyApplications = async (req, res) => {
   }
 };
 
+const generateCertificatePDF = require('../utils/pdfGenerator');
+
+// Download Certificate PDF
+exports.downloadCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await LeavingCertificate.findById(id).populate('student');
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    // Check if approved (optional strictly, but good practice)
+    if (application.status !== 'approved') {
+       return res.status(400).json({ message: 'Certificate not yet approved' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=LC_${application.prn}.pdf`);
+
+    generateCertificatePDF(application, res);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error generating certificate' });
+  }
+};
+
+
 // Student applies for Alumni Registration
 exports.registerAlumni = async (req, res) => {
   try {
