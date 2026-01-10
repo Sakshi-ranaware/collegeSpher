@@ -81,7 +81,33 @@ export default function Dashboard({ user }) {
                   <span className="font-medium text-gray-900">{new Date(lcApplication.createdAt).toLocaleDateString()}</span>
                 </div>
                 {lcApplication.status === 'approved' ? (
-                  <button className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700">
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        const response = await axios.get(
+                          `${API_BASE_URL}/student/application/${lcApplication._id}/download`,
+                          { 
+                            headers: { Authorization: `Bearer ${token}` },
+                            responseType: 'blob' // Important for file download
+                          }
+                        );
+                        
+                        // Create blob link to download
+                        const url = window.URL.createObjectURL(new Blob([response.data]));
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.setAttribute('download', `Leaving_Certificate_${lcApplication.prn || 'copy'}.pdf`);
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                      } catch (err) {
+                        console.error('Download failed:', err);
+                        alert('Failed to download certificate. Please try again.');
+                      }
+                    }}
+                    className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 cursor-pointer"
+                  >
                     <ArrowRightIcon className="h-4 w-4 mr-2" /> Download Certificate
                   </button>
                 ) : (

@@ -7,15 +7,16 @@ const {
   finalApprove, 
   getAllLeavingCertificates,
   getAlumniApplications,
-  updateAlumniStatus 
+  updateAlumniStatus,
+  updateNoDuesDetails
 } = require('../controllers/adminController');
-
 const router = express.Router();
 
 // LC Routes
 router.get('/lc/pending', auth, role('admin'), getPendingFinal);
 router.get('/lc/all', auth, role('admin'), getAllLeavingCertificates);
 router.post('/lc/approve/:id', auth, role('admin'), finalApprove);
+router.put('/lc/:id/nodues', auth, role('admin'), updateNoDuesDetails);
 
 // Alumni Routes
 router.get('/alumni', auth, role('admin'), getAlumniApplications);

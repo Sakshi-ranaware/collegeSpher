@@ -11,6 +11,8 @@ import ApplyLeavingCertificate from './components/ApplyLeavingCertificate';
 import ApplyAlumni from './components/ApplyAlumni';
 import NoDuesStatus from './components/NoDuesStatus';
 import Register from './components/Register';
+import HODDashboard from './components/HODDashboard';
+import PrincipalDashboard from './components/PrincipalDashboard';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 // API base URL
@@ -76,13 +78,13 @@ function App() {
               path="/login" 
               element={!isAuthenticated ? 
                 <Login onLogin={handleLogin} /> : 
-                <Navigate to={user?.role === 'student' ? '/dashboard' : '/department'} />} 
+                <Navigate to="/" />} 
             />
             <Route 
               path="/register" 
               element={!isAuthenticated ? 
                 <Register onLogin={handleLogin} /> : 
-                <Navigate to={user?.role === 'student' ? '/dashboard' : '/department'} />} 
+                <Navigate to="/" />} 
             />
             <Route 
               path="/dashboard" 
@@ -111,7 +113,7 @@ function App() {
             <Route 
               path="/department" 
               element={isAuthenticated && user?.role === 'department' ? 
-                <DepartmentDashboard /> : 
+                <DepartmentDashboard user={user} /> : 
                 <Navigate to="/login" />} 
             />
             <Route 
@@ -120,12 +122,26 @@ function App() {
                 <AdminDashboard user={user} /> : 
                 <Navigate to="/login" />} 
             />
+             <Route 
+              path="/hod" 
+              element={isAuthenticated && user?.role === 'hod' ? 
+                <HODDashboard /> : 
+                <Navigate to="/login" />} 
+            />
+             <Route 
+              path="/principal" 
+              element={isAuthenticated && user?.role === 'principal' ? 
+                <PrincipalDashboard /> : 
+                <Navigate to="/login" />} 
+            />
             <Route 
               path="/" 
               element={
                 isAuthenticated ? 
                   (user.role === 'student' ? <Navigate to="/dashboard" /> : 
                    user.role === 'admin' ? <Navigate to="/admin" /> :
+                   user.role === 'hod' ? <Navigate to="/hod" /> :
+                   user.role === 'principal' ? <Navigate to="/principal" /> :
                    <Navigate to="/department" />) : 
                   <Navigate to="/login" />
               } 

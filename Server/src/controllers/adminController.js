@@ -97,3 +97,32 @@ exports.updateAlumniStatus = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Update No Dues Details for a specific LC Application
+exports.updateNoDuesDetails = async (req, res) => {
+  const { id } = req.params;
+  const { noDuesStatuses } = req.body; // Expecting the full array or specific updates
+  
+  try {
+    const application = await LeavingCertificate.findById(id);
+    if (!application) return res.status(404).json({ message: 'Application not found' });
+
+    if (noDuesStatuses && Array.isArray(noDuesStatuses)) {
+       noDuesStatuses.forEach(update => {
+         const index = application.noDuesStatuses.findIndex(item => item.department === update.department);
+         if (index !== -1) {
+           application.noDuesStatuses[index].dueAmount = update.dueAmount;
+           application.noDuesStatuses[index].remark = update.remark;
+           application.noDuesStatuses[index].authorityName = update.authorityName;
+           application.noDuesStatuses[index].signature = update.signature;
+           application.noDuesStatuses[index].updatedAt = Date.now();
+         }
+       });
+    }
+
+    await application.save();
+    res.json(application);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
