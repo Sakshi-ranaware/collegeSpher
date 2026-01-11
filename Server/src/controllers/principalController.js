@@ -3,12 +3,13 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const LeavingCertificate = require('../models/LeavingCertificate');
+const generateCertificatePDF = require('../utils/pdfGenerator');
 
 // Get all applications pending Principal Review
 exports.getAllApplications = async (req, res) => {
   try {
     const applications = await LeavingCertificate.find({
-      workflowStage: 'principal_pending'
+      workflowStage: { $in: ['principal_pending', 'completed'] }
     }).populate('student', 'name email').sort('-createdAt');
     res.json(applications);
   } catch (err) {
@@ -62,5 +63,31 @@ exports.generateLC = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
+  }
+};
+
+// Download LC PDF
+exports.downloadLC = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await LeavingCertificate.findById(id).populate('student');
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    // Ensure it is completed
+    if (application.workflowStage !== 'completed') {
+       return res.status(400).json({ message: 'Certificate not yet generated' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=LC_${application.prn}.pdf`);
+
+    generateCertificatePDF(application, res);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error generating certificate' });
   }
 };

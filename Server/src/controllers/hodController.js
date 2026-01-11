@@ -43,3 +43,40 @@ exports.approveApplication = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+const AlumniRegistration = require('../models/AlumniRegistration');
+
+// Get all Alumni Applications for HOD
+exports.getAlumniApplications = async (req, res) => {
+  try {
+    const applications = await AlumniRegistration.find({})
+      .populate('student', 'name email mobile')
+      .sort('-createdAt');
+    res.json(applications);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Start/Update Alumni Application Status (Approve/Reject)
+exports.updateAlumniStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminRemark } = req.body;
+
+    const application = await AlumniRegistration.findById(id);
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    application.status = status;
+    if (adminRemark) {
+      application.adminRemark = adminRemark;
+    }
+
+    await application.save();
+    res.json(application);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

@@ -41,12 +41,20 @@ exports.updateStatus = async (req, res) => {
     if (authorityName !== undefined) deptStatus.authorityName = authorityName;
     if (signature !== undefined) deptStatus.signature = signature;
 
-    // Auto-update status logic
-    // Ensure dueAmount is treated as a number
-    if (deptStatus.dueAmount > 0) {
-      deptStatus.status = 'dues_pending';
+    // Update status if provided explicitly, otherwise infer from dueAmount
+    if (req.body.status) {
+        deptStatus.status = req.body.status;
+        // If cleared, ensure dueAmount is 0
+        if (req.body.status === 'cleared') {
+            deptStatus.dueAmount = 0;
+        }
     } else {
-      deptStatus.status = 'cleared';
+        // Auto-update status logic (legacy/fallback)
+        if (deptStatus.dueAmount > 0) {
+            deptStatus.status = 'dues_pending';
+        } else {
+            deptStatus.status = 'cleared';
+        }
     }
     
     deptStatus.updatedAt = Date.now();
