@@ -33,7 +33,7 @@ const leavingCertificateSchema = new mongoose.Schema(
       type: [
         {
           department: String,
-          status: { type: String, enum: ['pending', 'cleared', 'dues_pending'], default: 'pending' },
+          status: { type: String, enum: ['pending', 'cleared', 'dues_pending', 'rejected'], default: 'pending' },
           dueAmount: { type: Number, default: 0 },
           remark: { type: String, default: '' },
           authorityName: { type: String, default: '' },

@@ -9,10 +9,15 @@ import DepartmentDashboard from './components/DepartmentDashboard';
 import AdminDashboard from './components/AdminDashboard'; // Import new component
 import ApplyLeavingCertificate from './components/ApplyLeavingCertificate';
 import ApplyAlumni from './components/ApplyAlumni';
+import DepartmentApplicationDetails from './components/DepartmentApplicationDetails';
 import NoDuesStatus from './components/NoDuesStatus';
 import Register from './components/Register';
 import HODDashboard from './components/HODDashboard';
+import HODApplicationDetails from './components/HODApplicationDetails';
+import HODAlumniApplications from './components/HODAlumniApplications';
+import HODAlumniDetails from './components/HODAlumniDetails';
 import PrincipalDashboard from './components/PrincipalDashboard';
+import PrincipalApplicationDetails from './components/PrincipalApplicationDetails';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 // API base URL
@@ -71,7 +76,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        {isAuthenticated && <Navbar user={user} onLogout={handleLogout} />}
+        <Navbar user={user} onLogout={handleLogout} />
         <main className="container mx-auto px-4 py-8">
           <Routes>
             <Route 
@@ -117,6 +122,12 @@ function App() {
                 <Navigate to="/login" />} 
             />
             <Route 
+              path="/department/application/:id" 
+              element={isAuthenticated && user?.role === 'department' ? 
+                <DepartmentApplicationDetails user={user} /> : 
+                <Navigate to="/login" />} 
+            />
+            <Route 
               path="/admin" 
               element={isAuthenticated && user?.role === 'admin' ? 
                 <AdminDashboard user={user} /> : 
@@ -129,9 +140,33 @@ function App() {
                 <Navigate to="/login" />} 
             />
              <Route 
+              path="/hod/application/:id" 
+              element={isAuthenticated && user?.role === 'hod' ? 
+                <HODApplicationDetails /> : 
+                <Navigate to="/login" />} 
+            />
+             <Route 
+              path="/hod/alumni-applications" 
+              element={isAuthenticated && user?.role === 'hod' ? 
+                <HODAlumniApplications /> : 
+                <Navigate to="/login" />} 
+            />
+             <Route 
+              path="/hod/alumni/application/:id" 
+              element={isAuthenticated && user?.role === 'hod' ? 
+                <HODAlumniDetails /> : 
+                <Navigate to="/login" />} 
+            />
+             <Route 
               path="/principal" 
               element={isAuthenticated && user?.role === 'principal' ? 
                 <PrincipalDashboard /> : 
+                <Navigate to="/login" />} 
+            />
+             <Route 
+              path="/principal/application/:id" 
+              element={isAuthenticated && user?.role === 'principal' ? 
+                <PrincipalApplicationDetails /> : 
                 <Navigate to="/login" />} 
             />
             <Route 
@@ -149,7 +184,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>
-        {isAuthenticated && <Footer />}
+        {<Footer />}
       </div>
     </Router>
   );

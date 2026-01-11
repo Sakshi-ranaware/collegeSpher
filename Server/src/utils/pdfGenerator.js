@@ -53,7 +53,7 @@ module.exports = (application, stream) => {
   const lineEndX = 550;
 
   const drawField = (number, label, value) => {
-    doc.font('Helvetica').fontSize(11).text(`${number}  ${label}`, leftX, y);
+    doc.font('Helvetica').fontSize(11).text(`${number}  ${label}`, leftX, y, { width: 170 });
     doc.text(':', middleX - 10, y);
     doc.font('Helvetica-Bold').text((value || '').toUpperCase(), middleX, y);
     
@@ -78,17 +78,63 @@ module.exports = (application, stream) => {
   drawField('5', 'Place of Birth', application.birthPlace || 'PUNE');
 
   // 6. Date of Birth (Words & Figures) (Complex due to 2 lines)
+  // 6. Date of Birth (in figures & words) (Complex due to 2 lines)
   const dob = application.dob ? new Date(application.dob) : new Date();
   const dobStr = dob.toLocaleDateString('en-GB'); // DD/MM/YYYY
-  // Simple number to text converter (placeholder)
-  const dobWords = 'Nineteenth September Two Thousand Three'.toUpperCase(); // Implement proper converter if needed
+
+  // Helper function to convert number to words
+  const numberToWords = (num) => {
+      const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+      const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
+
+      if ((num = num.toString()).length > 9) return 'overflow';
+      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+      if (!n) return; 
+      let str = '';
+      str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
+      str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
+      str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
+      str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
+      str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
+      return str.trim();
+  };
+
+  // Custom function for Day (Ordinal words)
+  const dayToWords = (d) => {
+      const days = [
+          "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth",
+          "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth", "Twentieth",
+          "Twenty First", "Twenty Second", "Twenty Third", "Twenty Fourth", "Twenty Fifth", "Twenty Sixth", "Twenty Seventh", "Twenty Eighth", "Twenty Ninth", "Thirtieth", "Thirty First"
+      ];
+      return days[d - 1] || "";
+  };
+
+  const monthNames = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+  ];
+
+  const dateToWords = (date) => {
+      const d = date.getDate();
+      const m = date.getMonth();
+      const y = date.getFullYear();
+
+      const dayStr = dayToWords(d);
+      const monthStr = monthNames[m];
+      const yearStr = numberToWords(y);
+
+      return `${dayStr} ${monthStr} ${yearStr}`.toUpperCase();
+  };
+
+
+  const dobWords = dateToWords(dob);
   
-  doc.font('Helvetica').fontSize(11).text('6  Date of Birth (in figures & words)', leftX, y);
+  doc.font('Helvetica').fontSize(11).text('6  Date of Birth', leftX, y);
   doc.text(':', middleX - 10, y);
   doc.font('Helvetica-Bold').text(dobStr, middleX, y);
   doc.moveTo(middleX, y + 12).lineTo(lineEndX, y + 12).stroke();
   y += 25;
-  doc.text(dobWords, middleX, y); // Words on next line visually
+  doc.font('Helvetica').fontSize(10).text('(in figures & words)', leftX + 13, y);
+  doc.font('Helvetica-Bold').text(dobWords, middleX, y); // Words on next line visually
   doc.moveTo(middleX, y + 12).lineTo(lineEndX, y + 12).stroke();
   y += lineSpacing;
 

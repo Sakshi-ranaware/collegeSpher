@@ -53,65 +53,41 @@ export default function HODDashboard() {
         <ul className="divide-y divide-gray-200">
           {applications.map((app) => (
             <li key={app._id} className="p-6">
-              <div className="mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Student: {app.student?.name}</h3>
-                <p className="text-sm text-gray-500">PRN: {app.prn} | Status: {app.workflowStage}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                   <h3 className="text-lg font-bold text-gray-900">Student: {app.student?.name}</h3>
+                   <div className="flex gap-2 text-sm text-gray-500 mt-1">
+                      <span>PRN: <span className="font-mono text-gray-700">{app.prn}</span></span>
+                      <span>•</span>
+                      <span>
+                        Status: 
+                        <span className={`ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          app.workflowStage === 'completed' ? 'bg-green-100 text-green-800' :
+                          app.workflowStage === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {app.workflowStage}
+                        </span>
+                      </span>
+                   </div>
+                </div>
+                
+                <button
+                    onClick={() => window.location.href = `/hod/application/${app._id}`}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                  View Application
+                </button>
               </div>
 
-              {/* Read-Only View of No Dues Form */}
-              <div className="overflow-x-auto border rounded-md mb-4 bg-gray-50 p-2">
-                <table className="min-w-full text-xs text-left">
-                  <thead className="border-b">
-                    <tr>
-                      <th className="px-2 py-1">Dept</th>
-                      <th className="px-2 py-1">Due Amount</th>
-                      <th className="px-2 py-1">Remark</th>
-                      <th className="px-2 py-1">Authority</th>
-                      <th className="px-2 py-1">Sign</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {app.noDuesStatuses.map((row, idx) => (
-                      <tr key={idx} className="border-b last:border-0 hover:bg-gray-100">
-                        <td className="px-2 py-1 font-medium">{row.department}</td>
-                        <td className="px-2 py-1">{row.dueAmount}</td>
-                        <td className="px-2 py-1">{row.remark}</td>
-                        <td className="px-2 py-1">{row.authorityName}</td>
-                        <td className="px-2 py-1">{row.signature}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                {(app.workflowStage === 'dept_pending' || app.workflowStage === 'hod_pending') && (
-                  <>
-                     <button
-                      onClick={() => handleApproval(app._id, 'approved')}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircleIcon className="h-5 w-5 mr-1" />
-                      Approve & Send to Principal
-                    </button>
-                    <button
-                      onClick={() => handleApproval(app._id, 'rejected')}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                    >
-                       <XCircleIcon className="h-5 w-5 mr-1" />
-                      Reject (Send Back)
-                    </button>
-                  </>
-                )}
-                {app.hodApproval?.status === 'approved' && (
-                  <span className="text-sm font-medium text-green-600 bg-green-100 px-3 py-1 rounded-full">
-                    Approved by HOD
-                  </span>
-                )}
-              </div>
             </li>
           ))}
-          {applications.length === 0 && <p className="p-6 text-center text-gray-500">No pending applications.</p>}
+          {applications.length === 0 && (
+             <li className="p-12 text-center flex flex-col items-center">
+                 <CheckCircleIcon className="h-12 w-12 text-gray-300 mb-3" />
+                 <p className="text-gray-500 text-lg">No pending applications found.</p>
+             </li>
+          )}
         </ul>
       </div>
     </div>
