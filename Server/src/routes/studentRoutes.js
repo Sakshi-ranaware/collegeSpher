@@ -2,6 +2,7 @@
 const express = require('express');
 const auth = require('../middleware/authMiddleware');
 const role = require('../middleware/roleMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 const {
   applyLeavingCertificate,
   getMyApplications,
@@ -13,7 +14,7 @@ const {
 const router = express.Router();
 
 // Leaving Certificate Routes
-router.post('/apply', auth, role('student'), applyLeavingCertificate);
+router.post('/apply', auth, role('student'), upload.single('marksheet'), applyLeavingCertificate);
 router.get('/applications', auth, role('student'), getMyApplications);
 router.get('/application/:id/download', auth, role('student'), downloadCertificate);
 

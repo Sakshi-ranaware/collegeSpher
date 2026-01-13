@@ -145,6 +145,70 @@ export default function PrincipalApplicationDetails() {
             </div>
           </section>
 
+          {/* Marksheet Section */}
+          {application.marksheetUrl && (() => {
+            // Helper to convert Cloudinary image URL to raw URL for PDFs
+            const getMarksheetUrl = (url) => {
+              if (url.toLowerCase().endsWith('.pdf') && url.includes('/image/upload/')) {
+                return url.replace('/image/upload/', '/raw/upload/');
+              }
+              return url;
+            };
+            const marksheetUrl = getMarksheetUrl(application.marksheetUrl);
+            const isPdf = application.marksheetUrl.toLowerCase().endsWith('.pdf');
+            
+            return (
+            <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <span className="w-2 h-6 bg-green-600 rounded-sm"></span>
+                    Student Marksheet
+                </h3>
+              </div>
+              <div className="p-6">
+                {isPdf ? (
+                  <div className="flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-100">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <DocumentTextIcon className="h-6 w-6 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">Student Result Document</p>
+                        <p className="text-sm text-gray-500">Click to view the uploaded marksheet</p>
+                      </div>
+                    </div>
+                    <a
+                      href={marksheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-5 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      View Result
+                    </a>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <img
+                      src={marksheetUrl}
+                      alt="Student Marksheet"
+                      className="max-w-full h-auto rounded-lg border border-gray-200 shadow-sm"
+                      style={{ maxHeight: '400px', objectFit: 'contain' }}
+                    />
+                    <a
+                      href={marksheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-indigo-600 hover:text-indigo-800 font-medium"
+                    >
+                      Open in new tab →
+                    </a>
+                  </div>
+                )}
+              </div>
+            </section>
+            );
+          })()}
+
            {/* Approval Status Summary */}
            <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
