@@ -5,6 +5,8 @@ const PDFDocument = require('pdfkit');
 const LeavingCertificate = require('../models/LeavingCertificate');
 const generateCertificatePDF = require('../utils/pdfGenerator');
 
+const cloudinary = require('../config/cloudinary');
+
 // Get all applications pending Principal Review
 exports.getAllApplications = async (req, res) => {
   try {
@@ -29,39 +31,58 @@ exports.generateLC = async (req, res) => {
       return res.status(400).json({ message: 'Application not ready for LC generation' });
     }
 
-    // Ensure certificates directory exists
-    const certDir = path.join(__dirname, '..', '..', 'certificates');
-    if (!fs.existsSync(certDir)) fs.mkdirSync(certDir, { recursive: true });
+    // Temporary file path
+    const tempDir = path.join(__dirname, '..', '..', 'temp');
+    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
     const fileName = `LC_${application.student._id}_${Date.now()}.pdf`;
-    const filePath = path.join(certDir, fileName);
-    const doc = new PDFDocument();
+    const filePath = path.join(tempDir, fileName);
     const writeStream = fs.createWriteStream(filePath);
-    doc.pipe(writeStream);
-
-    doc.fontSize(20).text('Leaving Certificate', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`Name: ${application.firstName} ${application.middleName} ${application.lastName}`);
-    doc.text(`PRN: ${application.prn}`);
-    doc.text(`Date of Issue: ${new Date().toLocaleDateString()}`);
-    doc.text('This is to certify that the above student has cleared all dues.');
-    doc.moveDown();
-    doc.text(`Principal Remark: ${remark || 'None'}`);
-    doc.end();
+    // Use the improved PDF generator
+    generateCertificatePDF(application, writeStream);
 
     writeStream.on('finish', async () => {
-      application.workflowStage = 'completed';
-      application.certificateUrl = `/certificates/${fileName}`;
-      application.principalApproval = {
-        status: 'approved',
-        date: Date.now(),
-        remark
-      };
-      application.status = 'approved';
-      await application.save();
-      res.json(application);
+      try {
+        // Check file size, log it
+        const stats = fs.statSync(filePath);
+        console.log(`Uploading PDF to Cloudinary. Size: ${stats.size} bytes`);
+
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(filePath, {
+          folder: 'leaving_certificates',
+          resource_type: 'auto',
+          public_id: path.parse(fileName).name,
+          timeout: 120000 
+        });
+
+        // Clean up temp file
+        fs.unlinkSync(filePath);
+
+        application.workflowStage = 'completed';
+        application.certificateUrl = result.secure_url;
+        application.principalApproval = {
+          status: 'approved',
+          date: Date.now(),
+          remark
+        };
+        application.status = 'approved';
+        await application.save();
+        res.json(application);
+      } catch (uploadErr) {
+        console.error('Cloudinary upload error:', uploadErr);
+        // Clean up temp file if upload fails
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return res.status(500).json({ message: 'Error uploading certificate to cloud' });
+      }
     });
+
+    writeStream.on('error', (err) => {
+      console.error('PDF generation error:', err);
+      res.status(500).json({ message: 'Error generating PDF' });
+    });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -70,7 +91,7 @@ exports.generateLC = async (req, res) => {
 exports.downloadLC = async (req, res) => {
   try {
     const { id } = req.params;
-    const application = await LeavingCertificate.findById(id).populate('student');
+    const application = await LeavingCertificate.findById(id);
 
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
@@ -81,13 +102,15 @@ exports.downloadLC = async (req, res) => {
        return res.status(400).json({ message: 'Certificate not yet generated' });
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename=LC_${application.prn}.pdf`);
+    if (!application.certificateUrl) {
+        return res.status(404).json({ message: 'Certificate URL not found' });
+    }
 
-    generateCertificatePDF(application, res);
+    // Redirect to the Cloudinary URL
+    res.redirect(application.certificateUrl);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Error generating certificate' });
+    res.status(500).json({ message: 'Error downloading certificate' });
   }
 };
