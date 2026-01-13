@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DocumentTextIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import { DocumentTextIcon, PaperAirplaneIcon, CloudArrowUpIcon, XMarkIcon, DocumentIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -9,6 +9,7 @@ export default function ApplyLeavingCertificate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -28,19 +29,103 @@ export default function ApplyLeavingCertificate() {
     reason: ''
   });
 
+  const [marksheetFile, setMarksheetFile] = useState(null);
+  const [marksheetPreview, setMarksheetPreview] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    processFile(file);
+  };
+
+  const processFile = (file) => {
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Please upload an image (JPG, PNG) or PDF file');
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File size must be less than 5MB');
+      return;
+    }
+
+    setMarksheetFile(file);
+    setError(null);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMarksheetPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setMarksheetPreview(null);
+    }
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setMarksheetFile(null);
+    setMarksheetPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleApply = async (e) => {
     e.preventDefault();
+    
+    if (!marksheetFile) {
+      setError('Please upload your marksheet');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE_URL}/student/apply`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      
+      // Create FormData for file upload
+      const submitData = new FormData();
+      Object.keys(formData).forEach(key => {
+        submitData.append(key, formData[key]);
+      });
+      submitData.append('marksheet', marksheetFile);
+
+      await axios.post(`${API_BASE_URL}/student/apply`, submitData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       navigate('/dashboard'); 
     } catch (err) {
@@ -101,6 +186,84 @@ export default function ApplyLeavingCertificate() {
             </div>
           </section>
 
+          {/* Marksheet Upload Section */}
+          <section>
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">
+              Marksheet Upload <span className="text-red-500">*</span>
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please upload your latest marksheet (JPG, PNG, or PDF format, max 5MB)
+            </p>
+            
+            {!marksheetFile ? (
+              <div
+                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                  dragActive 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg,application/pdf"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <CloudArrowUpIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-700">
+                  Drag and drop your marksheet here
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  or <span className="text-blue-600 font-medium">browse</span> to upload
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  Supports: JPG, PNG, PDF (Max 5MB)
+                </p>
+              </div>
+            ) : (
+              <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    {marksheetPreview ? (
+                      <img
+                        src={marksheetPreview}
+                        alt="Marksheet preview"
+                        className="h-20 w-20 object-cover rounded-lg border border-gray-200"
+                      />
+                    ) : (
+                      <div className="h-20 w-20 bg-red-100 rounded-lg flex items-center justify-center">
+                        <DocumentIcon className="h-10 w-10 text-red-600" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-gray-900">{marksheetFile.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {(marksheetFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                      <p className="text-xs text-green-600 font-medium mt-1">
+                        ✓ Ready to upload
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeFile}
+                    className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                    title="Remove file"
+                  >
+                    <XMarkIcon className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+
           {error && (
             <div className="bg-red-50 text-red-700 p-4 rounded-md text-sm border border-red-200">
               {error}
@@ -115,7 +278,7 @@ export default function ApplyLeavingCertificate() {
                 loading ? 'opacity-75 cursor-not-allowed' : ''
               }`}
             >
-              {loading ? 'Processing...' : (
+              {loading ? 'Uploading...' : (
                 <>
                   <PaperAirplaneIcon className="h-5 w-5 mr-2 -rotate-45" />
                   Submit Application

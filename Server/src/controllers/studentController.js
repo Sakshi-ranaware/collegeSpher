@@ -1,8 +1,17 @@
 // src/controllers/studentController.js
 const LeavingCertificate = require('../models/LeavingCertificate');
 const AlumniRegistration = require('../models/AlumniRegistration');
+const cloudinary = require('../config/cloudinary');
+const path = require('path');
+const fs = require('fs');
 
-// Student applies for Leaving Certificate
+// Debug cloudinary config on load
+console.log('Cloudinary config check:', {
+  cloud_name: cloudinary.config().cloud_name ? 'SET' : 'MISSING',
+  api_key: cloudinary.config().api_key ? 'SET' : 'MISSING',
+  api_secret: cloudinary.config().api_secret ? 'SET (length: ' + cloudinary.config().api_secret.length + ')' : 'MISSING'
+});
+
 exports.applyLeavingCertificate = async (req, res) => {
   try {
     const existingApplication = await LeavingCertificate.findOne({ student: req.user._id, status: { $in: ['pending', 'approved'] } });
@@ -15,6 +24,49 @@ exports.applyLeavingCertificate = async (req, res) => {
       prn, admissionYear, branch, lastExamYear, result, reason
     } = req.body;
 
+    // Handle marksheet upload to Cloudinary
+    let marksheetUrl = null;
+    if (req.file) {
+      let filePath = null;
+      try {
+        // Save file to temp directory first (matching working pattern from principalController)
+        const tempDir = path.join(__dirname, '..', '..', 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+        
+        const fileExt = path.extname(req.file.originalname) || '.jpg';
+        const fileName = `marksheet_${req.user._id}_${Date.now()}${fileExt}`;
+        filePath = path.join(tempDir, fileName);
+        
+        // Write buffer to temp file
+        fs.writeFileSync(filePath, req.file.buffer);
+        
+        // Determine resource_type based on file mimetype
+        // PDFs need 'raw', images need 'image'
+        const isPdf = req.file.mimetype === 'application/pdf';
+        const resourceType = isPdf ? 'raw' : 'image';
+        
+        // Upload to Cloudinary using file path (storing in student_result folder)
+        const uploadResult = await cloudinary.uploader.upload(filePath, {
+          folder: 'student_result',
+          resource_type: resourceType,
+          public_id: `marksheet_${req.user._id}_${Date.now()}`,
+          timeout: 120000,
+          access_mode: 'public',  // Ensure file is publicly accessible
+          type: 'upload'  // Standard upload (publicly accessible)
+        });
+        
+        // Clean up temp file
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        
+        marksheetUrl = uploadResult.secure_url;
+      } catch (uploadErr) {
+        console.error('Cloudinary upload error:', uploadErr);
+        // Clean up temp file if upload fails
+        if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        return res.status(500).json({ message: 'Failed to upload marksheet' });
+      }
+    }
+
     const departments = ['Library', 'Hostel', 'Exam', 'Labs'];
     const noDuesStatuses = departments.map((dept) => ({ department: dept }));
 
@@ -23,6 +75,7 @@ exports.applyLeavingCertificate = async (req, res) => {
       firstName, middleName, lastName, motherName, religion, caste, nationality, dob, birthPlace,
       prn, admissionYear, branch, lastExamYear, result, reason,
       noDuesStatuses,
+      marksheetUrl,
     });
 
     res.status(201).json(application);

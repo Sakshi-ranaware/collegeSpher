@@ -76,6 +76,7 @@ const leavingCertificateSchema = new mongoose.Schema(
       date: Date,
       remark: String
     },
+    marksheetUrl: { type: String },
     certificateUrl: String,
     finalRemark: String,
   },
