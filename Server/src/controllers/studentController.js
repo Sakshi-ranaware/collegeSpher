@@ -21,7 +21,7 @@ exports.applyLeavingCertificate = async (req, res) => {
 
     const {
       firstName, middleName, lastName, motherName, religion, caste, nationality, dob, birthPlace,
-      prn, admissionYear, branch, lastExamYear, result, reason
+      prn, admissionYear, branch, lastExamYear, result, lastSchool, reason
     } = req.body;
 
     // Handle marksheet upload to Cloudinary
@@ -78,7 +78,7 @@ exports.applyLeavingCertificate = async (req, res) => {
     const application = await LeavingCertificate.create({
       student: req.user._id,
       firstName, middleName, lastName, motherName, religion, caste, nationality, dob, birthPlace,
-      prn, admissionYear, branch, lastExamYear, result, reason,
+      prn, admissionYear, branch, lastExamYear, result, lastSchool, reason,
       noDuesStatuses,
       marksheetUrl,
     });
@@ -114,6 +114,11 @@ exports.downloadCertificate = async (req, res) => {
     // Check if approved (optional strictly, but good practice)
     if (application.status !== 'approved') {
        return res.status(400).json({ message: 'Certificate not yet approved' });
+    }
+
+    // If a final certificate has been generated and uploaded, redirect to it
+    if (application.certificateUrl) {
+      return res.redirect(application.certificateUrl);
     }
 
     res.setHeader('Content-Type', 'application/pdf');

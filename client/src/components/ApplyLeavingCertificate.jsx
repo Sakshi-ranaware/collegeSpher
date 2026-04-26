@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DocumentTextIcon, PaperAirplaneIcon, CloudArrowUpIcon, XMarkIcon, DocumentIcon } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -9,6 +10,7 @@ export default function ApplyLeavingCertificate() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -26,6 +28,7 @@ export default function ApplyLeavingCertificate() {
     branch: '',
     lastExamYear: '',
     result: '',
+    lastSchool: '',
     reason: ''
   });
 
@@ -127,7 +130,13 @@ export default function ApplyLeavingCertificate() {
           'Content-Type': 'multipart/form-data'
         }
       });
-      navigate('/dashboard'); 
+      setModalConfig({
+        isOpen: true,
+        title: 'Application Submitted',
+        message: 'Your Leaving Certificate application has been submitted successfully and the No-Dues clearance process has started.',
+        type: 'success',
+        onConfirm: () => navigate('/dashboard')
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit application');
     } finally {
@@ -182,6 +191,7 @@ export default function ApplyLeavingCertificate() {
               <Select label="Branch" name="branch" value={formData.branch} onChange={handleChange} options={['Computer', 'IT', 'E&TC', 'Mechanical', 'Civil']} required />
               <Input label="Last Exam Year" name="lastExamYear" value={formData.lastExamYear} onChange={handleChange} required />
               <Select label="Result" name="result" value={formData.result} onChange={handleChange} options={['Pass', 'Fail', 'ATKT']} required />
+              <Input label="Last School/College" name="lastSchool" value={formData.lastSchool} onChange={handleChange} className="md:col-span-3" required />
               <Input label="Reason for Leaving" name="reason" value={formData.reason} onChange={handleChange} className="md:col-span-3" required />
             </div>
           </section>
@@ -288,6 +298,10 @@ export default function ApplyLeavingCertificate() {
           </div>
         </form>
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

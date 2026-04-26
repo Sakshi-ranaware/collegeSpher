@@ -10,6 +10,7 @@ import {
   XCircleIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,6 +20,7 @@ export default function HODAlumniDetails() {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     fetchApplication();
@@ -45,8 +47,17 @@ export default function HODAlumniDetails() {
     }
   };
 
-  const handleStatusUpdate = async (newStatus) => {
-    if (!confirm(`Are you sure you want to ${newStatus} this application?`)) return;
+  const handleStatusUpdate = (newStatus) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Confirm Action',
+      message: `Are you sure you want to ${newStatus} this application?`,
+      type: 'warning',
+      onConfirm: () => performStatusUpdate(newStatus)
+    });
+  };
+
+  const performStatusUpdate = async (newStatus) => {
 
     try {
       const token = localStorage.getItem('token');
@@ -56,10 +67,20 @@ export default function HODAlumniDetails() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      alert(`Application ${newStatus} successfully`);
-      navigate('/hod/alumni-applications');
+      setModalConfig({
+        isOpen: true,
+        title: 'Success',
+        message: `Application ${newStatus} successfully`,
+        type: 'success',
+        onConfirm: () => navigate('/hod/alumni-applications')
+      });
     } catch (err) {
-      alert('Failed to update status');
+      setModalConfig({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update status',
+        type: 'error'
+      });
       console.error(err);
     }
   };
@@ -199,6 +220,10 @@ export default function HODAlumniDetails() {
 
         </div>
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

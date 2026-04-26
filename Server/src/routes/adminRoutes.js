@@ -8,9 +8,15 @@ const {
   getAllLeavingCertificates,
   getAlumniApplications,
   updateAlumniStatus,
-  updateNoDuesDetails
+  updateNoDuesDetails,
+  getUnapprovedUsers,
+  approveUser
 } = require('../controllers/adminController');
 const router = express.Router();
+
+// User Approval Routes
+router.get('/users/unapproved', auth, role('admin'), getUnapprovedUsers);
+router.post('/users/approve/:id', auth, role('admin'), approveUser);
 
 // LC Routes
 router.get('/lc/pending', auth, role('admin'), getPendingFinal);

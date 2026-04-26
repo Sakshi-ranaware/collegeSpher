@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { UserGroupIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
 
@@ -9,6 +10,7 @@ export default function ApplyAlumni() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -65,7 +67,13 @@ export default function ApplyAlumni() {
       await axios.post(`${API_BASE_URL}/student/alumni/apply`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      navigate('/dashboard'); // Or a success page
+      setModalConfig({
+        isOpen: true,
+        title: 'Application Submitted',
+        message: 'Your Alumni Association registration has been submitted successfully!',
+        type: 'success',
+        onConfirm: () => navigate('/dashboard')
+      });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to submit application');
     } finally {
@@ -182,7 +190,11 @@ export default function ApplyAlumni() {
             </button>
           </div>
         </form>
-      </div>
+        <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
+    </div>
     </div>
   );
 }

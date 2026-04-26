@@ -7,6 +7,7 @@ import {
   DocumentArrowDownIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -16,6 +17,8 @@ export default function PrincipalApplicationDetails() {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [principalRemark, setPrincipalRemark] = useState('PASSED AND PROMOTED');
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     const fetchApplication = async () => {
@@ -44,20 +47,61 @@ export default function PrincipalApplicationDetails() {
   }, [id]);
 
   const handleGenerateLC = async () => {
-    const remark = prompt('Enter Principal Remark for LC:');
-    if (remark === null) return;
+    if (!principalRemark) {
+        setModalConfig({
+          isOpen: true,
+          title: 'Remark Required',
+          message: 'Please provide a final remark for the certificate.',
+          type: 'warning'
+        });
+        return;
+    }
 
     try {
       const token = localStorage.getItem('token');
       await axios.post(`${API_BASE_URL}/principal/generate/${id}`, 
-        { remark }, 
+        { remark: principalRemark }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('LC Generated Successfully!');
-      navigate('/principal');
+      setModalConfig({
+        isOpen: true,
+        title: 'Success',
+        message: 'Leaving Certificate generated successfully!',
+        type: 'success',
+        onConfirm: () => navigate('/principal')
+      });
     } catch (err) {
-      alert('Failed to generate LC');
+      setModalConfig({
+        isOpen: true,
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to generate LC',
+        type: 'error'
+      });
       console.error(err);
+    }
+  };
+
+  const handleDownload = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/principal/application/${id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `LC_${application.prn}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      console.error('Download failed:', err);
+      setModalConfig({
+        isOpen: true,
+        title: 'Download Failed',
+        message: 'Failed to download the certificate. Please try again later.',
+        type: 'error'
+      });
     }
   };
 
@@ -140,6 +184,9 @@ export default function PrincipalApplicationDetails() {
               <DisplayField label="Last Exam Year" value={application.lastExamYear} />
               <DisplayField label="Result" value={application.result} />
               <div className="md:col-span-3">
+                  <DisplayField label="Last School / College" value={application.lastSchool} />
+              </div>
+              <div className="md:col-span-3">
                   <DisplayField label="Reason for Leaving" value={application.reason} />
               </div>
             </div>
@@ -220,16 +267,17 @@ export default function PrincipalApplicationDetails() {
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x border-b">
                  {/* HOD Approval */}
-                 <div className="p-6">
-                     <h4 className="font-bold text-gray-700 mb-2">HOD Approval</h4>
-                     <div className="flex items-center gap-2">
-                         <CheckCircleIcon className="h-6 w-6 text-green-500" />
-                         <div>
-                             <p className="text-sm font-medium text-gray-900">Approved by HOD</p>
-                             <p className="text-xs text-gray-500">{new Date(application.hodApproval?.date).toLocaleString()}</p>
-                         </div>
-                     </div>
-                 </div>
+                  <div className="p-6">
+                      <h4 className="font-bold text-gray-700 mb-2">HOD Approval</h4>
+                      <div className="flex items-center gap-2">
+                          <CheckCircleIcon className="h-6 w-6 text-green-500" />
+                          <div>
+                              <p className="text-sm font-medium text-gray-900">Approved by HOD</p>
+                              <p className="text-xs text-indigo-600 font-bold uppercase mt-1">Conduct: {application.hodApproval?.conduct || 'N/A'}</p>
+                              <p className="text-xs text-gray-500">{new Date(application.hodApproval?.date).toLocaleString()}</p>
+                          </div>
+                      </div>
+                  </div>
                  
                  {/* Dept Clearance */}
                  <div className="p-6">
@@ -282,18 +330,50 @@ export default function PrincipalApplicationDetails() {
                     By approving this application, you are authorizing the generation of the Leaving Certificate for this student.
                  </p>
                  
+                 <div className="max-w-md mx-auto mb-6">
+                     <label className="block text-sm font-medium text-gray-700 mb-1 text-left">Final Remark for Certificate</label>
+                     <textarea
+                       value={principalRemark}
+                       onChange={(e) => setPrincipalRemark(e.target.value)}
+                       placeholder="Enter final remarks (e.g., PASSED AND PROMOTED)"
+                       className="block w-full px-3 py-2 border border-indigo-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                       rows="2"
+                     />
+                 </div>
+                 
                   <button
-                    onClick={handleGenerateLC}
+                    onClick={() => handleGenerateLC()}
                     className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg transition-all hover:scale-105"
                   >
                     <DocumentArrowDownIcon className="h-6 w-6 mr-2" />
                     Approve & Generate LC
+                   </button>
+               </section>
+           )}
+
+           {application.workflowStage === 'completed' && (
+               <section className="bg-indigo-50 rounded-xl p-8 border border-indigo-200 shadow-md mt-8 text-center">
+                 <h3 className="text-xl font-bold text-indigo-900 mb-2">Certificate Ready</h3>
+                 <p className="text-indigo-700 mb-6">
+                    The Leaving Certificate has been generated and approved. You can download it below.
+                 </p>
+                 
+                  <button
+                    onClick={handleDownload}
+                    className="inline-flex justify-center items-center px-8 py-4 border border-transparent text-lg font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg transition-all hover:scale-105"
+                  >
+                    <DocumentArrowDownIcon className="h-6 w-6 mr-2" />
+                    Download LC PDF
                   </button>
                </section>
            )}
 
         </div>
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
       default: 'student',
     },
     department: { type: String }, // only for department users
+    isApproved: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

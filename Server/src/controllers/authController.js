@@ -11,7 +11,13 @@ exports.register = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-    const user = await User.create({ name, email, password, role, department });
+    // Approval logic: Admin and Students are auto-approved. Staff (HOD, Principal, Dept) need manual approval.
+    let isApproved = false;
+    if (role === 'student' || role === 'admin' || email === process.env.ADMIN_EMAIL) {
+      isApproved = true;
+    }
+
+    const user = await User.create({ name, email, password, role, department, isApproved });
     const token = generateToken(user._id);
     res.status(201).json({
       token,
@@ -21,6 +27,7 @@ exports.register = async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
+        isApproved: user.isApproved
       }
     });
   } catch (err) {
@@ -35,6 +42,16 @@ exports.login = async (req, res) => {
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
+    // Check if account is approved (Only for staff roles: hod, principal, department)
+    const staffRoles = ['hod', 'principal', 'department'];
+    if (staffRoles.includes(user.role) && !user.isApproved) {
+      return res.status(403).json({ 
+        message: 'Your account is under review. Please wait for admin approval.',
+        notApproved: true 
+      });
+    }
+
     const token = generateToken(user._id);
     res.json({
       token,
@@ -44,6 +61,7 @@ exports.login = async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
+        isApproved: user.isApproved
       }
     });
   } catch (err) {
@@ -65,6 +83,7 @@ exports.verifyUser = async (req, res) => {
         email: user.email,
         role: user.role,
         department: user.department,
+        isApproved: user.isApproved
       }
     });
   } catch (err) {

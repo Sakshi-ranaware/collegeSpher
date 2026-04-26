@@ -8,6 +8,7 @@ import {
   XCircleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 import axios from 'axios';
 
 const API_BASE_URL =import.meta.env.VITE_API_BASE_URL;
@@ -16,6 +17,7 @@ export default function Dashboard({ user }) {
   const [lcApplication, setLcApplication] = useState(null);
   const [alumniApplication, setAlumniApplication] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     if (!user) return;
@@ -84,35 +86,18 @@ export default function Dashboard({ user }) {
                   <span className="font-medium text-gray-900">{new Date(lcApplication.createdAt).toLocaleDateString()}</span>
                 </div>
                 {lcApplication.status === 'approved' ? (
-                  <button 
-                    onClick={async () => {
-                      try {
-                        const token = localStorage.getItem('token');
-                        const response = await axios.get(
-                          `${API_BASE_URL}/student/application/${lcApplication._id}/download`,
-                          { 
-                            headers: { Authorization: `Bearer ${token}` },
-                            responseType: 'blob' // Important for file download
-                          }
-                        );
-                        
-                        // Create blob link to download
-                        const url = window.URL.createObjectURL(new Blob([response.data]));
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.setAttribute('download', `Leaving_Certificate_${lcApplication.prn || 'copy'}.pdf`);
-                        document.body.appendChild(link);
-                        link.click();
-                        link.remove();
-                      } catch (err) {
-                        console.error('Download failed:', err);
-                        alert('Failed to download certificate. Please try again.');
-                      }
-                    }}
-                    className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 cursor-pointer"
-                  >
-                    <ArrowRightIcon className="h-4 w-4 mr-2" /> Download Certificate
-                  </button>
+                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-md">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <CheckBadgeIcon className="h-5 w-5 text-green-500" aria-hidden="true" />
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-sm text-green-800 font-medium">
+                          Your LC is ready! Please visit the HOD or Principal's office to collect it.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <Link to="/no-dues" className="w-full flex justify-center items-center py-2 px-4 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors">
@@ -120,20 +105,36 @@ export default function Dashboard({ user }) {
                     </Link>
                     {lcApplication.status === 'pending' && (
                       <button 
-                        onClick={async () => {
-                          if (window.confirm('Are you sure you want to cancel your application? This will delete all progress.')) {
-                            try {
-                              const token = localStorage.getItem('token');
-                              await axios.delete(`${API_BASE_URL}/student/application/${lcApplication._id}`, {
-                                headers: { Authorization: `Bearer ${token}` }
-                              });
-                              setLcApplication(null);
-                              alert('Application cancelled successfully.');
-                            } catch (err) {
-                              console.error('Cancellation failed:', err);
-                              alert('Failed to cancel application.');
+                        onClick={() => {
+                          setModalConfig({
+                            isOpen: true,
+                            title: 'Cancel Application',
+                            message: 'Are you sure you want to cancel your application? This will delete all progress.',
+                            type: 'warning',
+                            onConfirm: async () => {
+                              try {
+                                const token = localStorage.getItem('token');
+                                await axios.delete(`${API_BASE_URL}/student/application/${lcApplication._id}`, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                setLcApplication(null);
+                                setModalConfig({
+                                  isOpen: true,
+                                  title: 'Cancelled',
+                                  message: 'Application cancelled successfully.',
+                                  type: 'success'
+                                });
+                              } catch (err) {
+                                console.error('Cancellation failed:', err);
+                                setModalConfig({
+                                  isOpen: true,
+                                  title: 'Error',
+                                  message: 'Failed to cancel application.',
+                                  type: 'error'
+                                });
+                              }
                             }
-                          }
+                          });
                         }}
                         className="w-full flex justify-center items-center py-2 px-4 border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
                       >
@@ -185,6 +186,10 @@ export default function Dashboard({ user }) {
         </div>
 
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

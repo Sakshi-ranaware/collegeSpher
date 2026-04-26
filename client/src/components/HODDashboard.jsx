@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function HODDashboard({ user }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     if (!user) return;
@@ -44,6 +46,30 @@ export default function HODDashboard({ user }) {
     }
   };
 
+  const handleDownload = async (app) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API_BASE_URL}/hod/application/${app._id}/download`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `LC_${app.prn}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      console.error('Download failed:', err);
+      setModalConfig({
+        isOpen: true,
+        title: 'Download Failed',
+        message: 'Failed to download the certificate. Please try again later.',
+        type: 'error'
+      });
+    }
+  };
+
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
@@ -73,12 +99,23 @@ export default function HODDashboard({ user }) {
                    </div>
                 </div>
                 
-                <button
-                    onClick={() => window.location.href = `/hod/application/${app._id}`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                  >
-                  View Application
-                </button>
+                <div className="flex gap-3">
+                  {app.workflowStage === 'completed' && (
+                    <button
+                      onClick={() => handleDownload(app)}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
+                      Download LC
+                    </button>
+                  )}
+                  <button
+                      onClick={() => window.location.href = `/hod/application/${app._id}`}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    >
+                    View Application
+                  </button>
+                </div>
               </div>
 
             </li>
@@ -91,6 +128,10 @@ export default function HODDashboard({ user }) {
           )}
         </ul>
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

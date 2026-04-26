@@ -4,6 +4,8 @@ const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const LeavingCertificate = require('../models/LeavingCertificate');
 const AlumniRegistration = require('../models/AlumniRegistration');
+const User = require('../models/User');
+const { sendEmail, getAccountApprovalTemplate, getAccountRejectionTemplate } = require('../utils/emailService');
 
 // --- Leaving Certificate Management ---
 
@@ -122,6 +124,46 @@ exports.updateNoDuesDetails = async (req, res) => {
 
     await application.save();
     res.json(application);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --- User Approval Management ---
+
+exports.getUnapprovedUsers = async (req, res) => {
+  try {
+    const users = await User.find({ isApproved: false }).sort('-createdAt');
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.approveUser = async (req, res) => {
+  const { id } = req.params;
+  const { status, reason } = req.body; // status: approved / rejected
+  try {
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (status === 'approved') {
+      user.isApproved = true;
+      await user.save();
+      
+      // Send approval email
+      const html = getAccountApprovalTemplate(user.name, user.role);
+      await sendEmail(user.email, 'Account Approved - CollegeSphere', `Dear ${user.name}, your account as ${user.role} has been approved.`, html);
+      
+      res.json({ message: 'User approved successfully', user });
+    } else {
+      // Send rejection email before deleting
+      const html = getAccountRejectionTemplate(user.name, user.role, reason);
+      await sendEmail(user.email, 'Account Registration Rejected - CollegeSphere', `Dear ${user.name}, your account registration has been rejected.`, html);
+      
+      await User.findByIdAndDelete(id);
+      res.json({ message: 'User registration rejected and account deleted' });
+    }
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

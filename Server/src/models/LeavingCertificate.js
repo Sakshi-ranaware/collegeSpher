@@ -21,6 +21,7 @@ const leavingCertificateSchema = new mongoose.Schema(
     branch: { type: String },
     lastExamYear: { type: String },
     result: { type: String, enum: ['Pass', 'Fail', 'ATKT'] },
+    lastSchool: { type: String },
     reason: { type: String },
 
     // Process Status
@@ -69,7 +70,8 @@ const leavingCertificateSchema = new mongoose.Schema(
     hodApproval: {
       status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
       date: Date,
-      remark: String
+      remark: String,
+      conduct: String
     },
     principalApproval: {
       status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },

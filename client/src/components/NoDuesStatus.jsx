@@ -180,14 +180,17 @@ export default function NoDuesStatus({ user }) {
             )}
             
             {application.status === 'approved' && (
-              <div className="mt-4 flex justify-center">
-                <button 
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  onClick={() => window.print()}
-                >
-                  <DocumentTextIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                  Download/Print Certificate
-                </button>
+              <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-md mt-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <CheckCircleIcon className="h-5 w-5 text-green-600" aria-hidden="true" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-green-700 font-bold">
+                      Your Leaving Certificate is ready! Please visit the HOD or Principal's office to collect it.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
