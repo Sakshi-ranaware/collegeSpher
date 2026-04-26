@@ -158,3 +158,26 @@ exports.getAccountRejectionTemplate = (name, role, reason) => {
     </div>
   `;
 };
+
+exports.getOTPTemplate = (name, otp) => {
+  return `
+    <div style="max-width: 600px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+      <div style="${headerStyle}">
+        <h1 style="margin: 0;">CollegeSphere</h1>
+      </div>
+      <div style="${bodyStyle}">
+        <h2 style="color: #1a237e;">Password Reset Verification</h2>
+        <p>Dear <strong>${name}</strong>,</p>
+        <p>You have requested to reset your password. Please use the following One-Time Password (OTP) to proceed:</p>
+        <div style="background-color: #fff; padding: 30px; border-radius: 8px; border: 2px dashed #1a237e; text-align: center; margin: 20px 0;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1a237e;">${otp}</span>
+        </div>
+        <p>This OTP is valid for <strong>10 minutes</strong>. If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
+      </div>
+      <div style="${footerStyle}">
+        <p>&copy; ${new Date().getFullYear()} CollegeSphere Management System. All rights reserved.</p>
+        <p>This is an automated message, please do not reply.</p>
+      </div>
+    </div>
+  `;
+};

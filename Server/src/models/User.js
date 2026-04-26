@@ -14,6 +14,8 @@ const userSchema = new mongoose.Schema(
     },
     department: { type: String }, // only for department users
     isApproved: { type: Boolean, default: false },
+    resetPasswordOTP: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

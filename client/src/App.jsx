@@ -20,6 +20,7 @@ import PrincipalDashboard from './components/PrincipalDashboard';
 import PrincipalApplicationDetails from './components/PrincipalApplicationDetails';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ForgotPassword from './components/ForgotPassword';
 
 // API base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -86,6 +87,10 @@ function App() {
           <Route 
             path="/register" 
             element={!isAuthenticated ? <Register onLogin={handleLogin} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/forgot-password" 
+            element={!isAuthenticated ? <ForgotPassword /> : <Navigate to="/" />} 
           />
           <Route 
             path="/dashboard" 
