@@ -173,9 +173,9 @@ export default function Login({ onLogin }) {
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition duration-200">
+              <Link to="/forgot-password" title="reset password" override="forgot-password-link" className="font-medium text-blue-600 hover:text-blue-500 transition duration-200">
                 Forgot password?
-              </a>
+              </Link>
             </div>
           </div>
 
