@@ -7,6 +7,7 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -15,6 +16,7 @@ export default function DepartmentDashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedApp, setSelectedApp] = useState(null);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     if (!user) return;
@@ -50,8 +52,13 @@ export default function DepartmentDashboard({ user }) {
       const response = await axios.get(`${API_BASE_URL}/department/applications`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setApplications(response.data);
-      alert('Updated successfully');
+         setApplications(response.data);
+      setModalConfig({
+        isOpen: true,
+        title: 'Success',
+        message: 'Status updated successfully.',
+        type: 'success'
+      });
       setSelectedApp(null); // Close modal if open
     } catch (err) {
       console.error('Error updating application status:', err);
@@ -246,6 +253,10 @@ export default function DepartmentDashboard({ user }) {
       </div>
 
 
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

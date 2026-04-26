@@ -38,6 +38,11 @@ exports.generateLC = async (req, res) => {
     const fileName = `LC_${application.student._id}_${Date.now()}.pdf`;
     const filePath = path.join(tempDir, fileName);
     const writeStream = fs.createWriteStream(filePath);
+    
+    // Update application object with remark temporarily for PDF generation
+    application.finalRemark = remark;
+    application.principalApproval = { ...application.principalApproval, remark };
+
     // Use the improved PDF generator
     generateCertificatePDF(application, writeStream);
 

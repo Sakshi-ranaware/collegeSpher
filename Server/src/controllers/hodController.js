@@ -18,7 +18,7 @@ exports.getAllApplications = async (req, res) => {
 // Transitions to Principal Pending
 exports.approveApplication = async (req, res) => {
   const { id } = req.params;
-  const { status, remark } = req.body; // status: approved/rejected
+  const { status, remark, conduct } = req.body; // status: approved/rejected
   
   try {
     const application = await LeavingCertificate.findById(id);
@@ -27,6 +27,7 @@ exports.approveApplication = async (req, res) => {
     application.hodApproval = {
       status,
       remark,
+      conduct,
       date: Date.now()
     };
     

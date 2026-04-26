@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { HiUser, HiMail, HiLockClosed, HiAcademicCap, HiOfficeBuilding } from 'react-icons/hi';
 import { FaSpinner } from 'react-icons/fa';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -16,6 +17,7 @@ export default function Register({ onLogin }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -38,8 +40,20 @@ export default function Register({ onLogin }) {
       };
 
       const response = await axios.post(`${API_BASE_URL}/auth/register`, dataToSend);
-      
       const { token, user } = response.data;
+
+      // If user requires approval, show modal and don't log in
+      if (!user.isApproved) {
+        setModalConfig({
+          isOpen: true,
+          title: 'Account Under Review',
+          message: 'Your registration is successful. However, your account is currently under review. Please wait for admin approval.',
+          type: 'warning',
+          onConfirm: () => navigate('/login')
+        });
+        return;
+      }
+      
       onLogin(token, user);
       
       // Redirect based on role
@@ -235,6 +249,11 @@ export default function Register({ onLogin }) {
           </Link>
         </p>
       </div>
+
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

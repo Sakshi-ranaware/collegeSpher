@@ -3,193 +3,180 @@ const PDFDocument = require('pdfkit');
 module.exports = (application, stream) => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
-  // Pipe to the writable stream (response or file)
+  // Pipe to the writable stream
   doc.pipe(stream);
 
-  // --- Border & Layout ---
-  // Outer Border
-  doc.rect(20, 20, 555, 800).stroke();
-  // Inner Border (Double line effect)
-  doc.rect(25, 25, 545, 790).stroke();
-
-  // --- Header ---
-  // Institution Name
-  doc.font('Helvetica-Bold').fontSize(10)
-    .text("Nutan Maharashtra Vidya Prasarak Mandal's (E.S.T.D. 1906)", 30, 40, { align: 'center' });
-  
-  doc.font('Helvetica-Bold').fontSize(16).fillColor('#c00000') // Red color for college name
-    .text('NUTAN MAHARASHTRA INSTITUTE OF ENGINEERING & TECHNOLOGY', 30, 55, { align: 'center' });
-  
-  doc.fillColor('black').fontSize(9)
-    .text('"Samarth Vidya Sankul", Vishnupuri, Talegaon Dabhade, Tal. Maval, Dist. Pune 410 507.', 30, 75, { align: 'center' });
-  
-  doc.text('(Approved by AICTE, New Delhi, Govt. of Maharashtra & Affiliated to Savitribai Phule Pune University)', 30, 88, { align: 'center' });
-
-  // Divider Line
-  doc.moveTo(25, 105).lineTo(570, 105).stroke();
-
-  // Ref No & Date
-  doc.fontSize(10).text(`Ref. No. ${application._id.toString().slice(-6)}`, 40, 115); // Pseudo Ref No
-  // doc.text('Date: ' + new Date().toLocaleDateString(), 450, 115); // Date usually at bottom
-
-  // General Register No (LC No)
-  doc.fontSize(12).font('Helvetica-Bold').text('LC. No. ' + (application.prn || '____'), 400, 115, { align: 'right' });
-
-
-  // Title
-  doc.moveDown(1.5);
-  doc.font('Helvetica-Bold').fontSize(14).text('ORIGINAL', { align: 'center' });
-  
-  // Blue Pill Background for Title
-  doc.roundedRect(150, 155, 300, 20, 10).fill('#1a237e'); // Dark Blue
-  doc.fillColor('white').fontSize(12).text('TRANSFER / LEAVING CERTIFICATE', 150, 160, { width: 300, align: 'center' });
-  doc.fillColor('black');
-
-  // --- Content ---
-  let y = 200;
-  const lineSpacing = 30;
-  const leftX = 40;
-  const middleX = 220; // Start of data value
-  const lineEndX = 550;
-
-  const drawField = (number, label, value) => {
-    doc.font('Helvetica').fontSize(11).text(`${number}  ${label}`, leftX, y, { width: 170 });
-    doc.text(':', middleX - 10, y);
-    doc.font('Helvetica-Bold').text((value || '').toUpperCase(), middleX, y);
-    
-    // Underline for value
-    doc.moveTo(middleX, y + 12).lineTo(lineEndX, y + 12).stroke();
-    y += lineSpacing;
+  // --- Design Tokens ---
+  const colors = {
+    primary: '#1a237e', // Navy Blue
+    secondary: '#c00000', // Crimson Red
+    text: '#212121',
+    lightText: '#757575',
+    accent: '#f5f5f5',
+    border: '#bdbdbd'
   };
 
-  // 1. Name
-  drawField('1', 'Name of the student in Full', `${application.lastName} ${application.firstName} ${application.middleName}`);
+  // --- Background / Border ---
+  // Fancy Outer Border
+  doc.rect(20, 20, 555, 800).lineWidth(2).stroke(colors.primary);
+  doc.rect(25, 25, 545, 790).lineWidth(0.5).stroke(colors.border);
+
+  // --- Header Section ---
+  // Institution Branding
+  doc.font('Helvetica-Bold').fontSize(10).fillColor(colors.text)
+    .text("Nutan Maharashtra Vidya Prasarak Mandal's (E.S.T.D. 1906)", 30, 45, { align: 'center' });
+
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(colors.secondary)
+    .text('NUTAN MAHARASHTRA INSTITUTE OF ENGINEERING & TECHNOLOGY', 30, 60, { align: 'center' });
+
+  doc.fillColor(colors.text).fontSize(9).font('Helvetica')
+    .text('"Samarth Vidya Sankul", Vishnupuri, Talegaon Dabhade, Tal. Maval, Dist. Pune 410 507.', 30, 80, { align: 'center' });
+
+  doc.fontSize(8)
+    .text('(Approved by AICTE, New Delhi, Govt. of Maharashtra & Affiliated to Savitribai Phule Pune University)', 30, 93, { align: 'center' });
+
+  // Header Line
+  doc.moveTo(25, 110).lineTo(570, 110).lineWidth(1.5).stroke(colors.primary);
+
+  // Ref No & Date Row
+  doc.font('Helvetica').fontSize(10).fillColor(colors.text);
+  doc.text(`Ref. No: NMIET / LC / ${new Date().getFullYear()} / ${application._id.toString().slice(-4).toUpperCase()}`, 40, 120);
+  doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 450, 120, { align: 'right' });
+
+  // Title with decorative element
+  doc.moveDown(1.5);
+  doc.font('Helvetica-Bold').fontSize(16).fillColor(colors.primary)
+    .text('Original', { align: 'center', underline: true });
+
+
+  doc.moveDown(1.5);
+
+  // --- Form Content Section ---
+  let currentY = 180;
+  const leftColX = 45;
+  const dividerX = 220;
+  const rightColX = 235;
+  const rowHeight = 28;
+  const maxWidth = 310;
+
+  const drawRow = (label, value, isBoldValue = true) => {
+    const textValue = (value || 'N/A').toString().toUpperCase();
+    const textHeight = doc.heightOfString(textValue, { width: maxWidth });
+    const actualRowHeight = Math.max(rowHeight, textHeight + 12);
+
+    // Background zebra striping (subtle)
+    if (Math.floor(currentY / rowHeight) % 2 === 0) {
+      doc.rect(40, currentY - 5, 515, actualRowHeight).fill(colors.accent);
+    }
+
+    doc.font('Helvetica').fontSize(10).fillColor(colors.text)
+      .text(label, leftColX, currentY, { width: 170 });
+
+    doc.text(':', dividerX, currentY);
+
+    doc.font(isBoldValue ? 'Helvetica-Bold' : 'Helvetica').fontSize(10)
+      .text(textValue, rightColX, currentY, { width: maxWidth, lineBreak: true });
+
+    // Draw horizontal line
+    doc.moveTo(40, currentY + actualRowHeight - 10)
+       .lineTo(555, currentY + actualRowHeight - 10)
+       .lineWidth(0.2)
+       .stroke(colors.border);
+
+    currentY += actualRowHeight;
+  };
+
+  // 1. Student Name
+  const fullName = `${application.lastName} ${application.firstName} ${application.middleName || ''}`;
+  drawRow('1. Full Name of Student', fullName);
 
   // 2. Mother's Name
-  drawField('2', "Mother's Name", application.motherName || 'SARIKA'); // Defaulting for demo if missing
+  drawRow("2. Mother's Name", application.motherName);
 
-  // 3. Religion/Caste
-  drawField('3', 'Religion and Caste / Sub-Cast', `${application.religion || 'HINDU'} - ${application.caste || 'MARATHA'}`);
+  // 3. Nationality
+  drawRow('3. Nationality', application.nationality);
 
-  // 4. Nationality
-  drawField('4', 'Nationality', application.nationality || 'INDIAN');
+  // 4. Religion & Caste
+  const religionCaste = `${application.religion || ''}${application.caste ? ' - ' + application.caste : ''}`;
+  drawRow('4. Religion and Caste', religionCaste);
 
-  // 5. Place of Birth
-  drawField('5', 'Place of Birth', application.birthPlace || 'PUNE');
+  // 5. Birth Place
+  drawRow('5. Place of Birth', application.birthPlace);
 
-  // 6. Date of Birth (Words & Figures) (Complex due to 2 lines)
-  // 6. Date of Birth (in figures & words) (Complex due to 2 lines)
-  const dob = application.dob ? new Date(application.dob) : new Date();
-  const dobStr = dob.toLocaleDateString('en-GB'); // DD/MM/YYYY
+  // 6. Date of Birth
+  const dob = application.dob ? new Date(application.dob) : null;
+  if (dob) {
+    const dobStr = dob.toLocaleDateString('en-GB');
 
-  // Helper function to convert number to words
-  const numberToWords = (num) => {
-      const a = ['','One ','Two ','Three ','Four ', 'Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
-      const b = ['', '', 'Twenty','Thirty','Forty','Fifty', 'Sixty','Seventy','Eighty','Ninety'];
-
-      if ((num = num.toString()).length > 9) return 'overflow';
-      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-      if (!n) return; 
-      let str = '';
-      str += (n[1] != 0) ? (a[Number(n[1])] || b[n[1][0]] + ' ' + a[n[1][1]]) + 'Crore ' : '';
-      str += (n[2] != 0) ? (a[Number(n[2])] || b[n[2][0]] + ' ' + a[n[2][1]]) + 'Lakh ' : '';
-      str += (n[3] != 0) ? (a[Number(n[3])] || b[n[3][0]] + ' ' + a[n[3][1]]) + 'Thousand ' : '';
-      str += (n[4] != 0) ? (a[Number(n[4])] || b[n[4][0]] + ' ' + a[n[4][1]]) + 'Hundred ' : '';
-      str += (n[5] != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[n[5][0]] + ' ' + a[n[5][1]]) : '';
-      return str.trim();
-  };
-
-  // Custom function for Day (Ordinal words)
-  const dayToWords = (d) => {
-      const days = [
-          "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth",
-          "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth", "Twentieth",
-          "Twenty First", "Twenty Second", "Twenty Third", "Twenty Fourth", "Twenty Fifth", "Twenty Sixth", "Twenty Seventh", "Twenty Eighth", "Twenty Ninth", "Thirtieth", "Thirty First"
-      ];
+    // Convert date to words
+    const dayToWords = (d) => {
+      const days = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth", "Eleventh", "Twelfth", "Thirteenth", "Fourteenth", "Fifteenth", "Sixteenth", "Seventeenth", "Eighteenth", "Nineteenth", "Twentieth", "Twenty First", "Twenty Second", "Twenty Third", "Twenty Fourth", "Twenty Fifth", "Twenty Sixth", "Twenty Seventh", "Twenty Eighth", "Twenty Ninth", "Thirtieth", "Thirty First"];
       return days[d - 1] || "";
-  };
+    };
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const numToWords = (n) => {
+      const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+      if (n < 20) return ones[n];
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+      if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred ' + (n % 100 !== 0 ? numToWords(n % 100) : '');
+      return numToWords(Math.floor(n / 1000)) + ' Thousand ' + (n % 1000 !== 0 ? numToWords(n % 1000) : '');
+    };
 
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-  ];
+    const dobWords = `${dayToWords(dob.getDate())} ${months[dob.getMonth()]} ${numToWords(dob.getFullYear())}`;
+    drawRow('6. Date of Birth', `${dobStr} \n(${dobWords.toUpperCase()})`);
+  } else {
+    drawRow('6. Date of Birth', 'N/A');
+  }
 
-  const dateToWords = (date) => {
-      const d = date.getDate();
-      const m = date.getMonth();
-      const y = date.getFullYear();
+  // 7. Last Institute
+  drawRow('7. Last School / College Attended', application.lastSchool || 'N/A');
 
-      const dayStr = dayToWords(d);
-      const monthStr = monthNames[m];
-      const yearStr = numberToWords(y);
+  // 8. PRN & Branch
+  drawRow('8. PRN Number', application.prn);
+  drawRow('9. Branch / Course', application.branch);
 
-      return `${dayStr} ${monthStr} ${yearStr}`.toUpperCase();
-  };
+  // 10. Admission Details
+  drawRow('10. Admission Year', application.admissionYear);
 
+  // 11. Academic Performance
+  drawRow('11. Result of Last Exam', `${application.result || 'PASS'} (${application.lastExamYear || 'N/A'})`);
 
-  const dobWords = dateToWords(dob);
-  
-  doc.font('Helvetica').fontSize(11).text('6  Date of Birth', leftX, y);
-  doc.text(':', middleX - 10, y);
-  doc.font('Helvetica-Bold').text(dobStr, middleX, y);
-  doc.moveTo(middleX, y + 12).lineTo(lineEndX, y + 12).stroke();
-  y += 25;
-  doc.font('Helvetica').fontSize(10).text('(in figures & words)', leftX + 13, y);
-  doc.font('Helvetica-Bold').text(dobWords, middleX, y); // Words on next line visually
-  doc.moveTo(middleX, y + 12).lineTo(lineEndX, y + 12).stroke();
-  y += lineSpacing;
+  // 12. Conduct
+  drawRow('12. Conduct and Progress', application.hodApproval?.conduct || 'GOOD');
 
-  // 7. Last School
-  drawField('7', 'Last School / College Attended', 'PIMPRI CHINCHWAD POLYTECHNIC'); // Hardcoded as requested to use placeholder
+  // 13. Reason for Leaving
+  drawRow('13. Reason for Leaving', application.reason || 'COURSE COMPLETED');
 
-  // 8. Date of Admission
-  drawField('8', 'Date of Admission', application.admissionYear ? `01/06/${application.admissionYear}` : '03/12/2022');
+  // 14. Principal\'s Remarks
+  const pRemark = application.principalApproval?.remark || application.finalRemark || 'PASSED AND PROMOTED';
+  drawRow('14. Final Remarks', pRemark);
 
-  // 9. Conduct
-  drawField('9', 'Conduct & Progress', 'GOOD');
+  // --- Verification Statement ---
+  doc.moveDown(2);
+  doc.font('Helvetica-Oblique').fontSize(9).fillColor(colors.lightText)
+    .text('Certified that the above information is as per the records available with the Institute.', { align: 'center' });
 
-  // 10. Date of Leaving
-  drawField('10', 'Date of Leaving', new Date().toLocaleDateString('en-GB'));
+  // --- Signatures Footer ---
+  const footerY = 720;
 
-  // 11. Studying Since
-  drawField('11', 'Year in which studying and since when', `DIRECT SECOND YEAR ${application.branch || 'ENGINEERING'}`);
+  // Place & Date
+  doc.font('Helvetica').fontSize(10).fillColor(colors.text);
+  doc.text('Place: Talegaon Dabhade', 45, footerY);
+  doc.text(`Date of Issue: ${new Date().toLocaleDateString('en-GB')}`, 45, footerY + 15);
 
-  // 12. Reason
-  drawField('12', 'Reason for leaving this college', application.reason ? application.reason.toUpperCase() : 'COMPLETED DEGREE');
+  // Signature Blocks
+  const sigLineY = footerY + 45;
+  doc.font('Helvetica-Bold').fontSize(10);
 
-  // 13. Remarks
-  drawField('13', 'Remarks', application.finalRemark || 'PASSED WITH FIRST CLASS WITH DISTINCTION');
+  doc.text('PREPARED BY', 60, sigLineY, { align: 'left' });
+  doc.text('CHECKED BY', 250, sigLineY, { align: 'left' });
+  doc.text('PRINCIPAL', 450, sigLineY, { align: 'left' });
 
-
-  // --- Footer ---
-  y += 40;
-  
-  doc.font('Helvetica').fontSize(10);
-  doc.text('I Certified that the above information is in accordance with the institute Register.', { align: 'center' });
-  
-  y += 30;
-  doc.text('Place : Talegaon Station', leftX, y);
-  doc.text(`Date : ${new Date().toLocaleDateString('en-GB').toUpperCase()}`, leftX, y + 20);
-
-  // Signatures
-  y += 50; 
-  // Stamp (Circle)
-  doc.circle(280, y + 10, 40).stroke();
-  doc.fontSize(8).text('Nutan Maharashtra', 245, y - 5, { width: 70, align: 'center' });
-  doc.text('Inst of Engg.', 245, y + 5, { width: 70, align: 'center' });
-  doc.text('PUNE', 245, y + 15, { width: 70, align: 'center' });
-
-
-  const sigY = y + 40;
-  
-  doc.fontSize(11).font('Helvetica-Bold');
-  
-  // Prepared By
-  doc.text('Prepared by', 80, sigY);
-  // Checked By
-  doc.text('Checked by', 250, sigY);
-  // Principal
-  doc.text('Principal', 450, sigY);
-
+  // Seal Placeholder
+  doc.circle(480, sigLineY - 30, 25).lineWidth(0.5).dash(2, { space: 2 }).stroke(colors.border);
+  doc.fontSize(7).font('Helvetica').fillColor(colors.border)
+    .text('INSTITUTE SEAL', 460, sigLineY - 33, { width: 40, align: 'center' });
 
   doc.end();
 };

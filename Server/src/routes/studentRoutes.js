@@ -17,7 +17,7 @@ const router = express.Router();
 // Leaving Certificate Routes
 router.post('/apply', auth, role('student'), upload.single('marksheet'), applyLeavingCertificate);
 router.get('/applications', auth, role('student'), getMyApplications);
-router.get('/application/:id/download', auth, role('student'), downloadCertificate);
+router.get('/application/:id/download', auth, role('hod', 'principal'), downloadCertificate);
 router.delete('/application/:id', auth, role('student'), deleteApplication);
 
 // Alumni Routes

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -10,6 +11,7 @@ export default function NoDuesForm({ applicationId, onClose }) {
   const [loading, setLoading] = useState(true);
   const [studentName, setStudentName] = useState('');
   const [prn, setPrn] = useState('');
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
 
   useEffect(() => {
     fetchData();
@@ -42,7 +44,12 @@ export default function NoDuesForm({ applicationId, onClose }) {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to load data');
+      setModalConfig({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to load data. Please try again.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -63,11 +70,21 @@ export default function NoDuesForm({ applicationId, onClose }) {
         { noDuesStatuses: formData }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('No Dues details updated successfully!');
-      onClose();
+      setModalConfig({
+        isOpen: true,
+        title: 'Success',
+        message: 'No Dues details updated successfully!',
+        type: 'success',
+        onConfirm: () => onClose()
+      });
     } catch (err) {
       console.error(err);
-      alert('Failed to update details.');
+      setModalConfig({
+        isOpen: true,
+        title: 'Update Failed',
+        message: 'Failed to update details.',
+        type: 'error'
+      });
     }
   };
 
@@ -180,6 +197,10 @@ export default function NoDuesForm({ applicationId, onClose }) {
           </button>
         </div>
       </div>
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }

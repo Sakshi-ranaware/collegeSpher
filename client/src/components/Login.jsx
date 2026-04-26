@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { HiMail, HiLockClosed, HiAcademicCap } from 'react-icons/hi';
 import { FaGoogle, FaMicrosoft, FaSpinner } from 'react-icons/fa';
+import Modal from './Modal';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,6 +15,7 @@ export default function Login({ onLogin }) {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [modalConfig, setModalConfig] = useState({ isOpen: false });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -47,7 +49,16 @@ export default function Login({ onLogin }) {
         navigate('/department');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      if (err.response?.data?.notApproved) {
+        setModalConfig({
+          isOpen: true,
+          title: 'Account Under Review',
+          message: 'Your account is currently being reviewed by the administrator. Please wait for approval.',
+          type: 'warning'
+        });
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -202,6 +213,11 @@ export default function Login({ onLogin }) {
           </p>
         </div>
       </div>
+
+      <Modal 
+        {...modalConfig} 
+        onClose={() => setModalConfig({ ...modalConfig, isOpen: false })} 
+      />
     </div>
   );
 }
