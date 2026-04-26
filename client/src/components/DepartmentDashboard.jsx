@@ -17,7 +17,10 @@ export default function DepartmentDashboard({ user }) {
   const [selectedApp, setSelectedApp] = useState(null);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchApplications = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/department/applications`, {
@@ -33,7 +36,7 @@ export default function DepartmentDashboard({ user }) {
     };
 
     fetchApplications();
-  }, []);
+  }, [user]);
 
   const handleUpdate = async (id, dueAmount, remark, authorityName, signature, status) => {
     try {

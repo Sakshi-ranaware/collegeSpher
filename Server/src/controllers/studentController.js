@@ -67,7 +67,12 @@ exports.applyLeavingCertificate = async (req, res) => {
       }
     }
 
-    const departments = ['Library', 'Hostel', 'Exam', 'Labs'];
+    const departments = [
+      'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6',
+      'Training and Placement', 'Alumni Association', 'Transport',
+      'Workshop', 'Hostel', 'Canteen', 'Stationary', 'Library',
+      'IT Infra', 'Sports', 'Exam'
+    ];
     const noDuesStatuses = departments.map((dept) => ({ department: dept }));
 
     const application = await LeavingCertificate.create({
@@ -147,6 +152,27 @@ exports.getAlumniApplications = async (req, res) => {
   try {
     const list = await AlumniRegistration.find({ student: req.user._id }).sort('-createdAt');
     res.json(list);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Cancel/Delete LC Application
+exports.deleteApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const application = await LeavingCertificate.findOne({ _id: id, student: req.user._id });
+    
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    if (application.status === 'approved') {
+      return res.status(400).json({ message: 'Cannot cancel an approved application' });
+    }
+
+    await LeavingCertificate.findByIdAndDelete(id);
+    res.json({ message: 'Application cancelled successfully' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

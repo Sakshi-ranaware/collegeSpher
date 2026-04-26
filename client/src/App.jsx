@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -6,7 +6,7 @@ import axios from 'axios';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import DepartmentDashboard from './components/DepartmentDashboard';
-import AdminDashboard from './components/AdminDashboard'; // Import new component
+import AdminDashboard from './components/AdminDashboard';
 import ApplyLeavingCertificate from './components/ApplyLeavingCertificate';
 import ApplyAlumni from './components/ApplyAlumni';
 import DepartmentApplicationDetails from './components/DepartmentApplicationDetails';
@@ -20,6 +20,7 @@ import PrincipalDashboard from './components/PrincipalDashboard';
 import PrincipalApplicationDetails from './components/PrincipalApplicationDetails';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+
 // API base URL
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -32,15 +33,14 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Verify token with backend
       const verifyToken = async () => {
         try {
           const response = await axios.get(`${API_BASE_URL}/auth/verify`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (response.data.valid) {
-            setIsAuthenticated(true);
             setUser(response.data.user);
+            setIsAuthenticated(true);
           } else {
             localStorage.removeItem('token');
           }
@@ -58,9 +58,10 @@ function App() {
   }, []);
 
   const handleLogin = (token, userData) => {
+    console.log('handleLogin called with:', userData);
     localStorage.setItem('token', token);
-    setIsAuthenticated(true);
     setUser(userData);
+    setIsAuthenticated(true);
   };
 
   const handleLogout = () => {
@@ -74,119 +75,88 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar user={user} onLogout={handleLogout} />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route 
-              path="/login" 
-              element={!isAuthenticated ? 
-                <Login onLogin={handleLogin} /> : 
-                <Navigate to="/" />} 
-            />
-            <Route 
-              path="/register" 
-              element={!isAuthenticated ? 
-                <Register onLogin={handleLogin} /> : 
-                <Navigate to="/" />} 
-            />
-            <Route 
-              path="/dashboard" 
-              element={isAuthenticated && user?.role === 'student' ? 
-                <Dashboard user={user} /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/apply" 
-              element={isAuthenticated && user?.role === 'student' ? 
-                <ApplyLeavingCertificate userId={user.id} /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/no-dues" 
-              element={isAuthenticated && user?.role === 'student' ? 
-                <NoDuesStatus userId={user.id} /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/alumni" 
-              element={isAuthenticated && user?.role === 'student' ? 
-                <ApplyAlumni /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/department" 
-              element={isAuthenticated && user?.role === 'department' ? 
-                <DepartmentDashboard user={user} /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/department/application/:id" 
-              element={isAuthenticated && user?.role === 'department' ? 
-                <DepartmentApplicationDetails user={user} /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/admin" 
-              element={isAuthenticated && user?.role === 'admin' ? 
-                <AdminDashboard user={user} /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/hod" 
-              element={isAuthenticated && user?.role === 'hod' ? 
-                <HODDashboard /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/hod/application/:id" 
-              element={isAuthenticated && user?.role === 'hod' ? 
-                <HODApplicationDetails /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/hod/alumni-applications" 
-              element={isAuthenticated && user?.role === 'hod' ? 
-                <HODAlumniApplications /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/hod/alumni/application/:id" 
-              element={isAuthenticated && user?.role === 'hod' ? 
-                <HODAlumniDetails /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/principal" 
-              element={isAuthenticated && user?.role === 'principal' ? 
-                <PrincipalDashboard /> : 
-                <Navigate to="/login" />} 
-            />
-             <Route 
-              path="/principal/application/:id" 
-              element={isAuthenticated && user?.role === 'principal' ? 
-                <PrincipalApplicationDetails /> : 
-                <Navigate to="/login" />} 
-            />
-            <Route 
-              path="/" 
-              element={
-                isAuthenticated ? 
-                  (user.role === 'student' ? <Navigate to="/dashboard" /> : 
-                   user.role === 'admin' ? <Navigate to="/admin" /> :
-                   user.role === 'hod' ? <Navigate to="/hod" /> :
-                   user.role === 'principal' ? <Navigate to="/principal" /> :
-                   <Navigate to="/department" />) : 
-                  <Navigate to="/login" />
-              } 
-            />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </main>
-        {<Footer />}
-      </div>
-    </Router>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar user={user} onLogout={handleLogout} />
+      <main className="container mx-auto px-4 py-8">
+        <Routes>
+          <Route 
+            path="/login" 
+            element={!isAuthenticated ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/register" 
+            element={!isAuthenticated ? <Register onLogin={handleLogin} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/dashboard" 
+            element={isAuthenticated && user?.role === 'student' ? <Dashboard user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/apply" 
+            element={isAuthenticated && user?.role === 'student' ? <ApplyLeavingCertificate userId={user?._id} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/no-dues" 
+            element={isAuthenticated && user?.role === 'student' ? <NoDuesStatus user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/alumni" 
+            element={isAuthenticated && user?.role === 'student' ? <ApplyAlumni /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/department" 
+            element={isAuthenticated && user?.role === 'department' ? <DepartmentDashboard user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/department/application/:id" 
+            element={isAuthenticated && user?.role === 'department' ? <DepartmentApplicationDetails user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/admin" 
+            element={isAuthenticated && user?.role === 'admin' ? <AdminDashboard user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/hod" 
+            element={isAuthenticated && user?.role === 'hod' ? <HODDashboard user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/hod/application/:id" 
+            element={isAuthenticated && user?.role === 'hod' ? <HODApplicationDetails /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/hod/alumni-applications" 
+            element={isAuthenticated && user?.role === 'hod' ? <HODAlumniApplications /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/hod/alumni/application/:id" 
+            element={isAuthenticated && user?.role === 'hod' ? <HODAlumniDetails /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/principal" 
+            element={isAuthenticated && user?.role === 'principal' ? <PrincipalDashboard user={user} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/principal/application/:id" 
+            element={isAuthenticated && user?.role === 'principal' ? <PrincipalApplicationDetails /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/" 
+            element={
+              isAuthenticated ? 
+                (user?.role === 'student' ? <Navigate to="/dashboard" /> : 
+                 user?.role === 'admin' ? <Navigate to="/admin" /> :
+                 user?.role === 'hod' ? <Navigate to="/hod" /> :
+                 user?.role === 'principal' ? <Navigate to="/principal" /> :
+                 user?.role === 'department' ? <Navigate to="/department" /> :
+                 <Navigate to="/login" />) : 
+                <Navigate to="/login" />
+            } 
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
   );
 }
 

@@ -152,7 +152,7 @@ export default function ApplyLeavingCertificate() {
         <div className="px-8 py-6 bg-blue-50 border-l-4 border-blue-500">
           <p className="text-sm text-blue-800">
             Applying for a Leaving Certificate will automatically trigger the <strong>No Dues Clearance</strong> process.
-            Relevant departments (Library, Hostel, Exam, Labs) will be notified to check your records.
+            Relevant departments (Labs, Library, Hostel, Exam, Training & Placement, etc.) will be notified to check your records.
           </p>
         </div>
 

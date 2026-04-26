@@ -8,7 +8,8 @@ const {
   getMyApplications,
   registerAlumni,
   getAlumniApplications,
-  downloadCertificate
+  downloadCertificate,
+  deleteApplication
 } = require('../controllers/studentController');
 
 const router = express.Router();
@@ -17,6 +18,7 @@ const router = express.Router();
 router.post('/apply', auth, role('student'), upload.single('marksheet'), applyLeavingCertificate);
 router.get('/applications', auth, role('student'), getMyApplications);
 router.get('/application/:id/download', auth, role('student'), downloadCertificate);
+router.delete('/application/:id', auth, role('student'), deleteApplication);
 
 // Alumni Routes
 router.post('/alumni/apply', auth, role('student'), registerAlumni);
