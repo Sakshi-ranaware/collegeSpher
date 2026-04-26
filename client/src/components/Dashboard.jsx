@@ -18,7 +18,10 @@ export default function Dashboard({ user }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+    
     const fetchData = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         const [lcRes, alumniRes] = await Promise.all([
@@ -35,7 +38,7 @@ export default function Dashboard({ user }) {
       }
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const StatusBadge = ({ status }) => {
     const colors = {
@@ -111,9 +114,33 @@ export default function Dashboard({ user }) {
                     <ArrowRightIcon className="h-4 w-4 mr-2" /> Download Certificate
                   </button>
                 ) : (
-                  <Link to="/no-dues" className="w-full flex justify-center items-center py-2 px-4 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50">
-                    Track Status
-                  </Link>
+                  <div className="space-y-3">
+                    <Link to="/no-dues" className="w-full flex justify-center items-center py-2 px-4 border border-blue-200 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors">
+                      Track Status
+                    </Link>
+                    {lcApplication.status === 'pending' && (
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm('Are you sure you want to cancel your application? This will delete all progress.')) {
+                            try {
+                              const token = localStorage.getItem('token');
+                              await axios.delete(`${API_BASE_URL}/student/application/${lcApplication._id}`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                              });
+                              setLcApplication(null);
+                              alert('Application cancelled successfully.');
+                            } catch (err) {
+                              console.error('Cancellation failed:', err);
+                              alert('Failed to cancel application.');
+                            }
+                          }
+                        }}
+                        className="w-full flex justify-center items-center py-2 px-4 border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        <XCircleIcon className="h-4 w-4 mr-2" /> Cancel Application
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             ) : (

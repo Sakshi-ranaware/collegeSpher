@@ -5,13 +5,14 @@ import { DocumentArrowDownIcon, CheckCircleIcon } from '@heroicons/react/24/outl
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export default function PrincipalDashboard() {
+export default function PrincipalDashboard({ user }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
     fetchApplications();
-  }, []);
+  }, [user]);
 
   const fetchApplications = async () => {
     try {

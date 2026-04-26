@@ -16,13 +16,16 @@ const statusStyles = {
   rejected: { icon: ExclamationCircleIcon, color: 'text-red-500', bg: 'bg-red-50' },
 };
 
-export default function NoDuesStatus() {
+export default function NoDuesStatus({ user }) {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchApplication = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/student/applications`, {
@@ -41,7 +44,7 @@ export default function NoDuesStatus() {
     };
 
     fetchApplication();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -102,52 +105,67 @@ export default function NoDuesStatus() {
           </div>
         </div>
 
-        {/* Department List */}
-        <div className="px-6 py-4">
-          <div className="flow-root">
-            <ul className="-my-5 divide-y divide-gray-200">
-              {application.noDuesStatuses.map((item, index) => {
-                let iconColor = 'text-yellow-500';
-                let bgColor = 'bg-yellow-50';
-                let Icon = ClockIcon;
-                let statusText = 'Pending';
-                
-                if (item.status === 'cleared') {
-                    iconColor = 'text-green-600';
-                    bgColor = 'bg-green-100';
-                    Icon = CheckCircleIcon;
-                    statusText = 'Cleared';
-                } else if (item.status === 'dues_pending') {
-                    iconColor = 'text-red-600';
-                    bgColor = 'bg-red-100';
-                    Icon = ExclamationCircleIcon;
-                    statusText = 'Dues Pending';
-                }
+        {/* Department Grid */}
+        <div className="px-6 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {application.noDuesStatuses.map((item, index) => {
+              let iconColor = 'text-yellow-600';
+              let bgColor = 'bg-yellow-50';
+              let borderColor = 'border-yellow-100';
+              let Icon = ClockIcon;
+              let statusText = 'Pending';
+              
+              if (item.status === 'cleared' || item.status === 'approved') {
+                  iconColor = 'text-green-600';
+                  bgColor = 'bg-green-50';
+                  borderColor = 'border-green-100';
+                  Icon = CheckCircleIcon;
+                  statusText = 'Cleared';
+              } else if (item.status === 'dues_pending' || item.status === 'rejected') {
+                  iconColor = 'text-red-600';
+                  bgColor = 'bg-red-50';
+                  borderColor = 'border-red-100';
+                  Icon = ExclamationCircleIcon;
+                  statusText = 'Dues Pending';
+              }
 
-                return (
-                  <li key={index} className="py-5">
-                    <div className="flex items-center space-x-4">
-                      <div className="flex-shrink-0">
-                        <span className={`inline-flex items-center justify-center h-10 w-10 rounded-full ${bgColor}`}>
-                            <Icon className={`h-6 w-6 ${iconColor}`} aria-hidden="true" />
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                         <p className="text-sm font-medium text-gray-900 truncate">
-                           {item.department} Department
-                         </p>
-                         <div className="text-sm text-gray-500">
-                           <p>Status: <span className={`font-medium ${iconColor}`}>{statusText}</span></p>
-                           {item.dueAmount > 0 && <p className="text-red-600 font-medium">Due Amount: ₹{item.dueAmount}</p>}
-                           {item.remark && <p>Remark: {item.remark}</p>}
-                           {item.authorityName && <p>Authority: {item.authorityName}</p>}
-                         </div>
-                      </div>
+              return (
+                <div key={index} className={`relative flex flex-col p-5 rounded-2xl border ${borderColor} ${bgColor} transition-all hover:shadow-md`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`inline-flex items-center justify-center h-12 w-12 rounded-xl bg-white shadow-sm`}>
+                        <Icon className={`h-7 w-7 ${iconColor}`} aria-hidden="true" />
+                    </span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${iconColor} bg-white/50 border border-current/10`}>
+                      {statusText}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <h3 className="text-sm font-bold text-gray-900 mb-1">
+                      {item.department}
+                    </h3>
+                    <div className="space-y-2">
+                      {item.dueAmount > 0 && (
+                        <div className="flex items-center text-red-700 font-bold bg-red-100/50 rounded-lg px-3 py-1 text-xs">
+                          Due: ₹{item.dueAmount}
+                        </div>
+                      )}
+                      {item.remark && (
+                        <p className="text-xs text-gray-600 italic line-clamp-2">
+                          "{item.remark}"
+                        </p>
+                      )}
                     </div>
-                  </li>
-                );
-              })}
-            </ul>
+                  </div>
+                  
+                  {item.authorityName && (
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center text-[10px] text-gray-400 font-medium">
+                      <span className="truncate">Auth: {item.authorityName}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

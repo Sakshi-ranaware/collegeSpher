@@ -5,13 +5,14 @@ import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-export default function HODDashboard() {
+export default function HODDashboard({ user }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
     fetchApplications();
-  }, []);
+  }, [user]);
 
   const fetchApplications = async () => {
     try {
