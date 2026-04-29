@@ -1,6 +1,7 @@
 // src/controllers/studentController.js
 const LeavingCertificate = require('../models/LeavingCertificate');
 const AlumniRegistration = require('../models/AlumniRegistration');
+const Department = require('../models/Department');
 const cloudinary = require('../config/cloudinary');
 const path = require('path');
 const fs = require('fs');
@@ -67,12 +68,18 @@ exports.applyLeavingCertificate = async (req, res) => {
       }
     }
 
-    const departments = [
-      'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6',
-      'Training and Placement', 'Alumni Association', 'Transport',
-      'Workshop', 'Hostel', 'Canteen', 'Stationary', 'Library',
-      'IT Infra', 'Sports', 'Exam'
-    ];
+    const dbDepartments = await Department.find();
+    let departments = dbDepartments.map(d => d.name);
+    
+    // Fallback if no departments are in the DB yet
+    if (departments.length === 0) {
+      departments = [
+        'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6',
+        'Training and Placement', 'Alumni Association', 'Transport',
+        'Workshop', 'Hostel', 'Canteen', 'Stationary', 'Library',
+        'IT Infra', 'Sports', 'Exam'
+      ];
+    }
     const noDuesStatuses = departments.map((dept) => ({ department: dept }));
 
     const application = await LeavingCertificate.create({
