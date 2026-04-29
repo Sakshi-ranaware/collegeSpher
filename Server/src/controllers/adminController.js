@@ -5,6 +5,7 @@ const PDFDocument = require('pdfkit');
 const LeavingCertificate = require('../models/LeavingCertificate');
 const AlumniRegistration = require('../models/AlumniRegistration');
 const User = require('../models/User');
+const Department = require('../models/Department');
 const { sendEmail, getAccountApprovalTemplate, getAccountRejectionTemplate } = require('../utils/emailService');
 
 // --- Leaving Certificate Management ---
@@ -164,6 +165,112 @@ exports.approveUser = async (req, res) => {
       await User.findByIdAndDelete(id);
       res.json({ message: 'User registration rejected and account deleted' });
     }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --- Department Management ---
+
+exports.getDepartments = async (req, res) => {
+  try {
+    let departments = await Department.find().sort('name');
+    
+    if (departments.length === 0) {
+      const defaultDepts = [
+        'Lab 1', 'Lab 2', 'Lab 3', 'Lab 4', 'Lab 5', 'Lab 6',
+        'Training and Placement', 'Alumni Association', 'Transport',
+        'Workshop', 'Hostel', 'Canteen', 'Stationary', 'Library',
+        'IT Infra', 'Sports', 'Exam'
+      ];
+      
+      const seedData = defaultDepts.map(name => ({ name }));
+      await Department.insertMany(seedData);
+      
+      departments = await Department.find().sort('name');
+    }
+    
+    res.json(departments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.addDepartment = async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ message: 'Department name is required' });
+    const exists = await Department.findOne({ name });
+    if (exists) return res.status(400).json({ message: 'Department already exists' });
+    const department = await Department.create({ name });
+    res.status(201).json(department);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.removeDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Department.findByIdAndDelete(id);
+    res.json({ message: 'Department removed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// --- Staff Management ---
+
+exports.getStaff = async (req, res) => {
+  try {
+    const staff = await User.find({ role: { $in: ['hod', 'department'] } }).select('-password').sort('department name');
+    res.json(staff);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.addStaff = async (req, res) => {
+  try {
+    const { name, email, password, role, department } = req.body;
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: 'User already exists' });
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+      department,
+      isApproved: true
+    });
+
+    res.status(201).json({ message: 'Staff added successfully', user: { _id: user._id, name, email, role, department } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.removeStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await User.findByIdAndDelete(id);
+    res.json({ message: 'Staff removed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.toggleStaffApproval = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isApproved } = req.body;
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    user.isApproved = isApproved;
+    await user.save();
+    res.json({ message: 'Approval status updated', user });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

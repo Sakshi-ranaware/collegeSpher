@@ -10,7 +10,14 @@ const {
   updateAlumniStatus,
   updateNoDuesDetails,
   getUnapprovedUsers,
-  approveUser
+  approveUser,
+  getDepartments,
+  addDepartment,
+  removeDepartment,
+  getStaff,
+  addStaff,
+  removeStaff,
+  toggleStaffApproval
 } = require('../controllers/adminController');
 const router = express.Router();
 
@@ -27,5 +34,16 @@ router.put('/lc/:id/nodues', auth, role('admin'), updateNoDuesDetails);
 // Alumni Routes
 router.get('/alumni', auth, role('admin'), getAlumniApplications);
 router.put('/alumni/:id/status', auth, role('admin'), updateAlumniStatus);
+
+// Department Management Routes
+router.get('/departments', auth, role('admin'), getDepartments);
+router.post('/departments', auth, role('admin'), addDepartment);
+router.delete('/departments/:id', auth, role('admin'), removeDepartment);
+
+// Staff Management Routes
+router.get('/staff', auth, role('admin'), getStaff);
+router.post('/staff', auth, role('admin'), addStaff);
+router.delete('/staff/:id', auth, role('admin'), removeStaff);
+router.put('/staff/:id/approval', auth, role('admin'), toggleStaffApproval);
 
 module.exports = router;

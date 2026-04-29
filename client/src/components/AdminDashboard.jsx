@@ -14,6 +14,10 @@ export default function AdminDashboard({ user }) {
   const [lcApplications, setLcApplications] = useState([]);
   const [alumniApplications, setAlumniApplications] = useState([]);
   const [unapprovedUsers, setUnapprovedUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newStaff, setNewStaff] = useState({ name: '', email: '', password: '', role: 'department', department: '' });
   const [editingNoDuesId, setEditingNoDuesId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modalConfig, setModalConfig] = useState({ isOpen: false });
@@ -23,8 +27,8 @@ export default function AdminDashboard({ user }) {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const token = localStorage.getItem('token');
     const headers = { headers: { Authorization: `Bearer ${token}` } };
 
@@ -44,13 +48,82 @@ export default function AdminDashboard({ user }) {
 
     try {
       const usersRes = await axios.get(`${API_BASE_URL}/admin/users/unapproved`, headers);
-      console.log('Unapproved users fetched:', usersRes.data.length);
       setUnapprovedUsers(usersRes.data);
     } catch (err) {
       console.error('Failed to fetch unapproved users:', err);
     }
 
-    setLoading(false);
+    try {
+      const deptRes = await axios.get(`${API_BASE_URL}/admin/departments`, headers);
+      setDepartments(deptRes.data);
+    } catch (err) {
+      console.error('Failed to fetch departments:', err);
+    }
+
+    try {
+      const staffRes = await axios.get(`${API_BASE_URL}/admin/staff`, headers);
+      setStaff(staffRes.data);
+    } catch (err) {
+      console.error('Failed to fetch staff:', err);
+    }
+
+    if (showLoading) setLoading(false);
+  };
+
+  const handleAddDepartment = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/admin/departments`, { name: newDepartment }, { headers: { Authorization: `Bearer ${token}` } });
+      setNewDepartment('');
+      fetchData(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add department');
+    }
+  };
+
+  const handleRemoveDepartment = async (id) => {
+    if(!window.confirm('Are you sure?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/admin/departments/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to remove department');
+    }
+  };
+
+  const handleAddStaff = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/admin/staff`, newStaff, { headers: { Authorization: `Bearer ${token}` } });
+      setNewStaff({ name: '', email: '', password: '', role: 'department', department: '' });
+      fetchData(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add staff');
+    }
+  };
+
+  const handleRemoveStaff = async (id) => {
+    if(!window.confirm('Are you sure?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/admin/staff/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to remove staff');
+    }
+  };
+
+  const handleToggleStaffApproval = async (id, currentStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_BASE_URL}/admin/staff/${id}/approval`, { isApproved: !currentStatus }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchData(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update approval status');
+    }
   };
 
   const handleUserApproval = async (userId, status) => {
@@ -80,7 +153,7 @@ export default function AdminDashboard({ user }) {
         message: 'User approved successfully!',
         type: 'success'
       });
-      fetchData();
+      fetchData(false);
     } catch (err) {
       setModalConfig({
         isOpen: true,
@@ -108,7 +181,7 @@ export default function AdminDashboard({ user }) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setModalConfig({ isOpen: false });
-      fetchData();
+      fetchData(false);
     } catch (err) {
       setModalConfig({
         isOpen: true,
@@ -145,7 +218,7 @@ export default function AdminDashboard({ user }) {
       const token = localStorage.getItem('token');
       await axios.post(`${API_BASE_URL}/admin/lc/approve/${id}`, { finalRemark: rejectionData.reason }, { headers: { Authorization: `Bearer ${token}` } });
       setModalConfig({ isOpen: false });
-      await fetchData();
+      await fetchData(false);
     } catch (err) {
       setModalConfig({
         isOpen: true,
@@ -160,7 +233,7 @@ export default function AdminDashboard({ user }) {
     try {
       const token = localStorage.getItem('token');
       await axios.put(`${API_BASE_URL}/admin/alumni/${id}/status`, { status, adminRemark: 'Processed by Admin' }, { headers: { Authorization: `Bearer ${token}` } });
-      await fetchData();
+      await fetchData(false);
     } catch (err) {
       console.error(err);
     }
@@ -208,6 +281,26 @@ export default function AdminDashboard({ user }) {
             }`}
           >
             Staff Approvals ({unapprovedUsers.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('departments')}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'departments'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Departments
+          </button>
+          <button
+            onClick={() => setActiveTab('staff')}
+            className={`whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'staff'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Staff Management
           </button>
         </nav>
       </div>
@@ -292,7 +385,7 @@ export default function AdminDashboard({ user }) {
               {alumniApplications.length === 0 && <p className="p-4 text-gray-500 text-center">No applications found.</p>}
             </ul>
           </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <ul className="divide-y divide-gray-200">
               {unapprovedUsers.map((u) => (
@@ -322,7 +415,76 @@ export default function AdminDashboard({ user }) {
               {unapprovedUsers.length === 0 && <p className="p-4 text-gray-500 text-center">No pending approvals.</p>}
             </ul>
           </div>
-        )}
+        ) : activeTab === 'departments' ? (
+          <div className="bg-white shadow overflow-hidden sm:rounded-md p-4">
+            <form onSubmit={handleAddDepartment} className="mb-6 flex gap-4">
+              <input
+                type="text"
+                required
+                value={newDepartment}
+                onChange={(e) => setNewDepartment(e.target.value)}
+                placeholder="New Department Name"
+                className="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              />
+              <button type="submit" className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">
+                Add Department
+              </button>
+            </form>
+            <ul className="divide-y divide-gray-200 border-t border-gray-200">
+              {departments.map((dept) => (
+                <li key={dept._id} className="py-4 flex items-center justify-between">
+                  <p className="font-medium text-gray-900">{dept.name}</p>
+                  <button onClick={() => handleRemoveDepartment(dept._id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
+                </li>
+              ))}
+              {departments.length === 0 && <p className="py-4 text-gray-500 text-center">No departments found.</p>}
+            </ul>
+          </div>
+        ) : activeTab === 'staff' ? (
+          <div className="bg-white shadow overflow-hidden sm:rounded-md p-4">
+            <form onSubmit={handleAddStaff} className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
+              <input type="text" required placeholder="Name" value={newStaff.name} onChange={e => setNewStaff({...newStaff, name: e.target.value})} className="col-span-1 border border-gray-300 rounded px-3 py-2 sm:text-sm" />
+              <input type="email" required placeholder="Email" value={newStaff.email} onChange={e => setNewStaff({...newStaff, email: e.target.value})} className="col-span-1 border border-gray-300 rounded px-3 py-2 sm:text-sm" />
+              <input type="password" required placeholder="Password" value={newStaff.password} onChange={e => setNewStaff({...newStaff, password: e.target.value})} className="col-span-1 border border-gray-300 rounded px-3 py-2 sm:text-sm" />
+              <select value={newStaff.role} onChange={e => setNewStaff({...newStaff, role: e.target.value})} className="col-span-1 border border-gray-300 rounded px-3 py-2 sm:text-sm">
+                <option value="department">Department</option>
+                <option value="hod">HOD</option>
+              </select>
+              <select value={newStaff.department} onChange={e => setNewStaff({...newStaff, department: e.target.value})} className="col-span-1 border border-gray-300 rounded px-3 py-2 sm:text-sm">
+                <option value="">Select Department</option>
+                {departments.map(d => <option key={d._id} value={d.name}>{d.name}</option>)}
+              </select>
+              <button type="submit" className="col-span-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-orange-600 hover:bg-orange-700">
+                Add Staff
+              </button>
+            </form>
+            <ul className="divide-y divide-gray-200 border-t border-gray-200">
+              {staff.map((s) => (
+                <li key={s._id} className="py-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{s.name} <span className="text-sm text-gray-500">({s.email})</span></p>
+                    <p className="text-sm text-gray-500">
+                      Role: {s.role.toUpperCase()} | Dept: {s.department || 'N/A'} | 
+                      <span className={`ml-1 font-semibold ${s.isApproved ? 'text-green-600' : 'text-red-600'}`}>
+                        {s.isApproved ? 'Approved' : 'Not Approved'}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex space-x-2 items-center">
+                    <button 
+                      onClick={() => handleToggleStaffApproval(s._id, s.isApproved)} 
+                      className={`inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white ${s.isApproved ? 'bg-orange-500 hover:bg-orange-600' : 'bg-green-600 hover:bg-green-700'}`}
+                    >
+                      {s.isApproved ? 'Revoke Approval' : 'Approve'}
+                    </button>
+                    <button onClick={() => handleRemoveStaff(s._id)} className="text-red-600 hover:text-red-900 text-sm font-medium">Remove</button>
+                  </div>
+                </li>
+              ))}
+              {staff.length === 0 && <p className="py-4 text-gray-500 text-center">No staff found.</p>}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       {editingNoDuesId && (
@@ -330,7 +492,7 @@ export default function AdminDashboard({ user }) {
           applicationId={editingNoDuesId} 
           onClose={() => {
             setEditingNoDuesId(null);
-            fetchData();
+            fetchData(false);
           }} 
         />
       )}
